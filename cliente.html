@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Transline · Datos para tu pedido</title>
+<meta name="theme-color" content="#164B77">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilos.css">
+<script src="config.js"></script>
+<script src="formcliente.js"></script>
+</head>
+<body>
+<header>
+  <div class="bar" style="padding-bottom:12px">
+    <svg class="logo" viewBox="130 425 820 230" role="img" aria-label="Transline"><path fill-rule="nonzero" fill="#F6F4F6" fill-opacity="1" d="M 317.60 543.62 C 311.16 543.62 306.27 545.57 302.93 549.44 C 299.59 553.32 297.92 559.01 297.92 566.53 L 297.92 611.61 C 297.92 613.04 297.41 614.29 296.40 615.36 C 295.39 616.44 294.10 616.98 292.55 616.98 L 276.81 616.98 C 275.38 616.98 274.13 616.44 273.05 615.36 C 271.98 614.29 271.44 613.04 271.44 611.61 L 271.44 525.56 C 271.44 524.01 271.98 522.69 273.05 521.62 C 274.13 520.55 275.38 520.01 276.81 520.01 L 280.39 520.01 C 283.73 520.01 287.78 522.93 292.55 528.78 C 295.65 525.32 299.32 522.55 303.55 520.46 C 307.79 518.37 312.83 517.32 318.67 517.32 C 323.92 517.32 328.93 518.22 333.70 520.01 C 335.01 520.49 335.96 521.35 336.56 522.60 C 337.16 523.85 337.28 525.14 336.92 526.45 L 332.81 541.83 C 332.33 543.51 331.37 544.70 329.94 545.41 C 328.51 546.13 327.02 546.19 325.47 545.59 C 324.28 545 323 544.52 321.62 544.16 C 320.25 543.80 318.91 543.62 317.60 543.62 "/> <path fill-rule="nonzero" fill="#F6F4F6" fill-opacity="1" d="M 388.09 594.43 C 390.59 594.43 393.12 594.01 395.69 593.18 C 398.25 592.35 400.55 591.07 402.58 589.33 C 404.60 587.60 406.27 585.40 407.59 582.71 C 408.90 580.03 409.55 576.84 409.55 573.14 L 383.62 573.14 C 380.04 573.14 377.35 574.25 375.56 576.45 C 373.77 578.66 373.00 581.10 373.24 583.79 C 373.48 586.47 374.79 588.92 377.17 591.12 C 379.56 593.33 383.20 594.43 388.09 594.43 M 390.23 516.43 C 398.10 516.43 404.93 517.51 410.72 519.65 C 416.50 521.80 421.27 524.64 425.03 528.15 C 428.79 531.67 431.59 535.66 433.44 540.14 C 435.29 544.61 436.21 549.17 436.21 553.82 L 436.21 611.79 C 436.21 613.22 435.67 614.47 434.60 615.54 C 433.53 616.62 432.21 617.15 430.67 617.15 L 427.26 617.15 C 423.92 617.15 419.99 614.41 415.46 608.92 C 410.92 612.74 405.85 615.54 400.25 617.33 C 394.64 619.12 389.04 620.01 383.44 620.01 C 376.16 620.01 369.81 618.32 364.38 614.92 C 358.96 611.52 354.72 607.23 351.68 602.04 C 348.64 596.85 346.91 591.27 346.5 585.31 C 346.07 579.35 347.21 573.77 349.89 568.58 C 352.58 563.39 356.90 559.10 362.86 555.70 C 368.83 552.30 376.64 550.60 386.30 550.60 L 409.20 550.60 C 408.60 548.46 407.50 546.73 405.89 545.41 C 404.28 544.10 402.49 543.12 400.52 542.46 C 398.55 541.81 396.61 541.39 394.71 541.21 C 392.80 541.03 391.31 540.94 390.23 540.94 C 386.30 540.94 382.63 541.42 379.23 542.37 C 375.83 543.33 372.94 544.28 370.55 545.23 C 369.24 545.83 367.90 545.83 366.53 545.23 C 365.16 544.64 364.17 543.62 363.58 542.19 L 358.39 529.67 C 357.79 528.36 357.79 526.99 358.39 525.56 C 358.98 524.12 360.00 523.11 361.43 522.51 C 364.77 521.32 369.06 520.01 374.31 518.58 C 379.56 517.15 384.87 516.43 390.23 516.43 "/> <path fill-rule="nonzero" fill="#F6F4F6" fill-opacity="1" d="M 500.25 517.15 C 505.98 517.15 511.67 518.13 517.34 520.10 C 523.00 522.07 528.13 525.05 532.72 529.05 C 537.32 533.04 541.01 538.14 543.82 544.34 C 546.62 550.54 548.02 557.88 548.02 566.34 L 548.02 611.61 C 548.02 613.04 547.48 614.29 546.41 615.36 C 545.34 616.44 544.02 616.98 542.48 616.98 L 526.91 616.98 C 525.36 616.98 524.05 616.44 522.97 615.36 C 521.90 614.29 521.37 613.04 521.37 611.61 L 521.37 563.48 C 521.37 560.26 520.74 557.40 519.49 554.89 C 518.23 552.39 516.56 550.27 514.48 548.55 C 512.39 546.82 510.03 545.53 507.41 544.70 C 504.79 543.87 502.10 543.45 499.36 543.45 C 496.85 543.45 494.32 543.83 491.76 544.61 C 489.19 545.39 486.87 546.61 484.78 548.28 C 482.69 549.95 481.02 552.03 479.77 554.54 C 478.52 557.04 477.89 560.02 477.89 563.48 L 477.89 611.61 C 477.89 613.04 477.38 614.29 476.37 615.36 C 475.35 616.44 474.07 616.98 472.53 616.98 L 456.78 616.98 C 455.35 616.98 454.10 616.44 453.02 615.36 C 451.95 614.29 451.41 613.04 451.41 611.61 L 451.41 567.42 C 451.41 558.83 452.85 551.38 455.71 545.06 C 458.57 538.73 462.33 533.52 466.98 529.40 C 471.63 525.29 476.88 522.22 482.72 520.19 C 488.56 518.16 494.41 517.15 500.25 517.15 "/> <path fill-rule="nonzero" fill="#F6F4F6" fill-opacity="1" d="M 562.87 544.70 C 562.87 540.17 563.88 536.17 565.91 532.71 C 567.94 529.25 570.62 526.36 573.96 524.03 C 577.30 521.71 581.12 519.95 585.41 518.76 C 589.70 517.57 594.11 516.97 598.65 516.97 C 605.21 516.97 611.53 518.28 617.61 520.91 C 623.69 523.53 628.35 527.46 631.57 532.71 C 632.40 534.03 632.61 535.39 632.19 536.83 C 631.77 538.26 630.91 539.33 629.60 540.05 L 621.55 544.88 C 620.95 545.35 620.12 545.59 619.05 545.59 C 617.49 545.59 616.12 545 614.93 543.80 C 613.02 541.66 610.57 540.08 607.59 539.06 C 604.61 538.05 601.63 537.54 598.65 537.54 C 595.43 537.54 592.63 538.14 590.24 539.33 C 587.85 540.52 586.66 542.26 586.66 544.52 C 586.66 546.91 587.94 548.84 590.51 550.33 C 593.07 551.83 596.44 553.23 600.62 554.54 C 607.41 556.68 613.11 558.95 617.70 561.33 C 622.29 563.72 625.99 566.32 628.80 569.12 C 631.59 571.92 633.62 575 634.88 578.33 C 636.13 581.67 636.76 585.43 636.76 589.60 C 636.76 594.37 635.68 598.64 633.53 602.39 C 631.39 606.15 628.53 609.31 624.95 611.87 C 621.37 614.44 617.28 616.38 612.69 617.69 C 608.10 619.00 603.36 619.66 598.47 619.66 C 594.41 619.66 590.42 619.18 586.48 618.23 C 582.55 617.27 578.82 615.87 575.30 614.02 C 571.78 612.17 568.62 609.79 565.82 606.87 C 563.02 603.95 560.78 600.51 559.11 596.58 C 558.51 595.15 558.55 593.69 559.20 592.20 C 559.85 590.71 560.96 589.73 562.51 589.25 L 575.93 584.95 C 577.24 584.59 578.52 584.71 579.78 585.31 C 581.03 585.91 581.95 586.86 582.55 588.17 C 584.10 591.39 586.31 593.75 589.17 595.24 C 592.03 596.73 594.95 597.48 597.93 597.48 C 601.15 597.48 604.02 596.67 606.52 595.06 C 609.03 593.45 610.28 591.16 610.28 588.17 C 610.28 585.19 608.52 582.54 605.00 580.21 C 601.48 577.89 596.74 575.59 590.78 573.32 C 587.44 572.01 584.10 570.58 580.76 569.03 C 577.42 567.48 574.41 565.60 571.73 563.39 C 569.04 561.19 566.89 558.57 565.28 555.52 C 563.67 552.48 562.87 548.87 562.87 544.70 "/> <path fill-rule="nonzero" fill="#F6F4F6" fill-opacity="1" d="M 655.36 616.98 C 653.92 616.98 652.67 616.44 651.60 615.36 C 650.53 614.29 649.99 612.98 649.99 611.43 L 649.99 481.19 C 649.99 479.64 650.53 478.33 651.60 477.25 C 652.67 476.18 653.92 475.64 655.36 475.64 L 671.10 475.64 C 672.65 475.64 673.93 476.18 674.95 477.25 C 675.96 478.33 676.47 479.64 676.47 481.19 L 676.47 611.43 C 676.47 612.98 675.96 614.29 674.95 615.36 C 673.93 616.44 672.65 616.98 671.10 616.98 Z M 655.36 616.98 "/> <path fill-rule="nonzero" fill="#F6F4F6" fill-opacity="1" d="M 717.79 520.01 C 719.34 520.01 720.66 520.55 721.73 521.62 C 722.80 522.69 723.34 524.01 723.34 525.56 L 723.34 611.61 C 723.34 613.04 722.80 614.29 721.73 615.36 C 720.66 616.44 719.34 616.98 717.79 616.98 L 702.23 616.98 C 700.68 616.98 699.36 616.44 698.29 615.36 C 697.22 614.29 696.68 613.04 696.68 611.61 L 696.68 525.56 C 696.68 524.01 697.22 522.69 698.29 521.62 C 699.36 520.55 700.68 520.01 702.23 520.01 Z M 709.92 502.12 C 707.77 502.12 705.77 501.73 703.93 500.96 C 702.08 500.18 700.47 499.08 699.10 497.65 C 697.72 496.22 696.62 494.58 695.78 492.73 C 694.95 490.88 694.53 488.88 694.53 486.73 C 694.53 484.59 694.95 482.59 695.78 480.74 C 696.62 478.89 697.72 477.28 699.10 475.91 C 700.47 474.54 702.08 473.44 703.93 472.60 C 705.77 471.77 707.77 471.35 709.92 471.35 C 712.07 471.35 714.09 471.77 716.00 472.60 C 717.91 473.44 719.55 474.54 720.92 475.91 C 722.29 477.28 723.40 478.89 724.23 480.74 C 725.07 482.59 725.48 484.59 725.48 486.73 C 725.48 491.03 723.96 494.67 720.92 497.65 C 717.88 500.63 714.21 502.12 709.92 502.12 "/> <path fill-rule="nonzero" fill="#F6F4F6" fill-opacity="1" d="M 789.71 517.15 C 795.43 517.15 801.13 518.13 806.80 520.10 C 812.46 522.07 817.59 525.05 822.18 529.05 C 826.77 533.04 830.47 538.14 833.27 544.34 C 836.07 550.54 837.48 557.88 837.48 566.34 L 837.48 611.61 C 837.48 613.04 836.94 614.29 835.86 615.36 C 834.79 616.44 833.48 616.98 831.93 616.98 L 816.36 616.98 C 814.81 616.98 813.50 616.44 812.43 615.36 C 811.35 614.29 810.82 613.04 810.82 611.61 L 810.82 563.48 C 810.82 560.26 810.19 557.40 808.94 554.89 C 807.69 552.39 806.01 550.27 803.93 548.55 C 801.84 546.82 799.48 545.53 796.86 544.70 C 794.24 543.87 791.56 543.45 788.81 543.45 C 786.31 543.45 783.77 543.83 781.21 544.61 C 778.64 545.39 776.32 546.61 774.23 548.28 C 772.14 549.95 770.48 552.03 769.23 554.54 C 767.97 557.04 767.35 560.02 767.35 563.48 L 767.35 611.61 C 767.35 613.04 766.83 614.29 765.82 615.36 C 764.81 616.44 763.53 616.98 761.98 616.98 L 746.24 616.98 C 744.80 616.98 743.55 616.44 742.48 615.36 C 741.41 614.29 740.87 613.04 740.87 611.61 L 740.87 567.42 C 740.87 558.83 742.30 551.38 745.16 545.06 C 748.03 538.73 751.78 533.52 756.43 529.40 C 761.08 525.29 766.33 522.22 772.17 520.19 C 778.02 518.16 783.86 517.15 789.71 517.15 "/> <path fill-rule="nonzero" fill="#F6F4F6" fill-opacity="1" d="M 895.80 542.73 C 893.53 542.73 891.32 542.97 889.17 543.45 C 887.03 543.92 885.03 544.70 883.18 545.77 C 881.33 546.85 879.75 548.25 878.44 549.98 C 877.13 551.71 876.23 553.82 875.76 556.33 L 915.65 556.33 C 915.30 553.94 914.49 551.89 913.24 550.16 C 911.99 548.43 910.44 547.02 908.58 545.95 C 906.74 544.88 904.71 544.07 902.50 543.54 C 900.30 543.00 898.06 542.73 895.80 542.73 M 939.62 606.24 C 940.58 609.22 939.69 611.43 936.94 612.86 C 933.36 614.53 928.74 616.05 923.08 617.42 C 917.41 618.79 910.11 619.48 901.16 619.48 C 893.41 619.48 886.40 618.37 880.14 616.17 C 873.88 613.96 868.51 610.75 864.04 606.51 C 859.57 602.28 856.10 597.12 853.66 591.03 C 851.22 584.95 850 578.09 850 570.46 L 850 564.38 C 850 555.91 851.34 548.69 854.02 542.73 C 856.71 536.77 860.22 531.85 864.58 527.97 C 868.93 524.10 873.85 521.26 879.33 519.47 C 884.82 517.68 890.43 516.79 896.15 516.79 C 901.52 516.79 906.77 517.66 911.90 519.39 C 917.02 521.12 921.65 523.74 925.76 527.26 C 929.87 530.77 933.19 535.13 935.69 540.32 C 938.19 545.50 939.45 551.50 939.45 558.30 L 939.45 559.55 L 939.27 560.08 L 939.27 560.80 L 939.45 561.33 L 939.45 564.73 C 939.45 568.55 938.13 571.77 935.51 574.39 C 932.89 577.02 929.73 578.33 926.03 578.33 L 876.48 578.33 C 877.42 580.96 878.80 583.25 880.59 585.22 C 882.38 587.19 884.46 588.80 886.85 590.05 C 889.24 591.30 891.83 592.26 894.63 592.91 C 897.43 593.57 900.21 593.89 902.95 593.89 C 908.80 593.89 913.78 593.39 917.89 592.37 C 922.00 591.37 925.32 590.26 927.82 589.07 C 929.37 588.47 930.86 588.50 932.29 589.16 C 933.72 589.81 934.67 590.92 935.15 592.46 Z M 939.62 606.24 "/> <path fill-rule="nonzero" fill="#417EC9" fill-opacity="1" d="M 235.03 452.38 L 235.03 452.39 L 229.98 462.06 L 188.52 462.06 L 198.55 442.82 C 198.58 442.77 198.60 442.73 198.64 442.67 C 200.26 439.56 202.80 437.00 205.89 435.32 C 207.22 434.60 208.66 434.04 210.18 433.68 C 210.44 433.62 210.69 433.56 210.96 433.52 C 212.03 433.31 213.15 433.20 214.28 433.20 C 215.77 433.20 217.22 433.39 218.60 433.73 C 220.11 434.11 221.55 434.69 222.88 435.43 C 224.92 436.58 226.71 438.11 228.15 439.93 C 228.88 440.85 229.51 441.84 230.04 442.89 L 230.05 442.85 Z M 235.03 452.38 "/> <path fill-rule="nonzero" fill="#73C6DE" fill-opacity="1" d="M 312.93 476.81 L 298.89 503.78 C 298.05 505.39 296.39 506.40 294.57 506.40 L 218.60 506.40 L 236.57 471.88 C 237.26 470.54 238.65 469.70 240.16 469.70 L 308.61 469.70 C 312.26 469.70 314.62 473.57 312.93 476.81 "/> <path fill-rule="nonzero" fill="#F6F4F6" fill-opacity="1" d="M 251.45 506.40 L 251.45 615.10 C 251.45 616.30 251.00 617.47 250.19 618.36 L 225.66 645.45 C 223.17 648.20 218.60 646.43 218.60 642.73 L 218.60 506.40 Z M 251.45 506.40 "/> <path fill-rule="nonzero" fill="#F6F4F6" fill-opacity="1" d="M 210.96 580.20 L 210.96 616.97 L 174.92 616.97 C 169.63 616.97 164.65 614.20 162.10 609.57 C 162.08 609.53 162.06 609.50 162.04 609.47 C 161.94 609.28 161.83 609.07 161.73 608.88 C 161.64 608.67 161.54 608.47 161.45 608.26 C 160.46 606.07 159.91 603.62 159.91 601.05 C 159.91 598.48 160.46 596.04 161.45 593.84 L 161.45 593.66 L 168.46 580.20 Z M 210.96 580.20 "/> <path fill-rule="nonzero" fill="#417EC9" fill-opacity="1" d="M 202.92 514.03 L 168.46 580.20 L 161.45 593.66 L 161.45 593.84 C 160.46 596.04 159.91 598.48 159.91 601.05 C 159.91 603.62 160.46 606.07 161.45 608.26 L 161.45 608.34 L 142.75 572.43 C 139.08 565.39 139.08 557 142.75 549.95 L 161.45 514.04 Z M 202.92 514.03 "/> <path fill-rule="nonzero" fill="#73C6DE" fill-opacity="1" d="M 281.52 462.06 L 240.07 462.06 L 230.05 442.85 L 230.04 442.89 C 229.51 441.84 228.88 440.85 228.15 439.93 C 226.71 438.11 224.92 436.58 222.88 435.43 C 221.55 434.69 220.11 434.11 218.60 433.73 C 217.22 433.39 215.77 433.20 214.28 433.20 L 251.73 433.20 C 260.80 433.20 269.12 438.25 273.31 446.30 Z M 281.52 462.06 "/> <path fill-rule="nonzero" fill="#417EC9" fill-opacity="1" d="M 184.55 469.69 L 179.19 479.91 L 161.44 479.91 L 166.03 471.09 C 166.47 470.23 167.36 469.69 168.33 469.69 Z M 184.55 469.69 "/> <path fill-rule="nonzero" fill="#417EC9" fill-opacity="1" d="M 195.35 496.19 L 190.01 506.40 L 168.76 506.40 L 174.10 496.19 Z M 195.35 496.19 "/> <path fill-rule="nonzero" fill="#417EC9" fill-opacity="1" d="M 218.60 496.19 L 218.60 506.40 L 193.44 506.40 L 198.79 496.19 Z M 218.60 496.19 "/> <path fill-rule="nonzero" fill="#417EC9" fill-opacity="1" d="M 218.60 482.95 L 218.60 493.15 L 200.39 493.15 L 205.73 482.95 Z M 218.60 482.95 "/> <path fill-rule="nonzero" fill="#417EC9" fill-opacity="1" d="M 218.60 472.29 L 218.60 479.91 L 207.32 479.91 L 210.96 472.97 L 212.67 469.70 L 216.00 469.70 C 217.43 469.70 218.60 470.86 218.60 472.29 "/> <path fill-rule="nonzero" fill="#417EC9" fill-opacity="1" d="M 177.60 482.95 L 172.25 493.15 L 154.54 493.15 L 159.85 482.95 Z M 177.60 482.95 "/> <path fill-rule="nonzero" fill="#417EC9" fill-opacity="1" d="M 170.66 496.19 L 165.32 506.40 L 151.92 506.40 C 149.97 506.40 148.72 504.33 149.62 502.60 L 152.96 496.19 Z M 170.66 496.19 "/> <path fill-rule="nonzero" fill="#417EC9" fill-opacity="1" d="M 209.24 469.69 L 203.89 479.91 L 182.63 479.91 L 187.98 469.69 Z M 209.24 469.69 "/> <path fill-rule="nonzero" fill="#417EC9" fill-opacity="1" d="M 202.30 482.95 L 196.95 493.15 L 175.69 493.15 L 181.04 482.95 Z M 202.30 482.95 "/></svg>
+    <div class="brand">Datos para tu pedido<small>Soluciones sostenibles en iluminación</small></div>
+  </div>
+</header>
+<main style="padding-bottom:40px">
+  <div id="cargando" class="vacio">Cargando tu pedido…</div>
+  <div id="error" class="vacio" hidden></div>
+
+  <section id="v-form" hidden>
+    <div class="card">
+      <p class="k" style="margin:0;color:var(--muted);font-size:.8rem">PEDIDO</p>
+      <h2 id="p-codigo" style="margin:2px 0 4px;font-size:1.2rem"></h2>
+      <p style="margin:0 0 10px;color:var(--muted);font-size:.88rem" id="p-info"></p>
+      <ul class="prods" id="p-prods"></ul>
+    </div>
+    <div class="aviso" id="p-aviso" hidden></div>
+    <p class="nota" style="margin:0 0 14px">Completa tus datos para emitir tu comprobante y preparar el envío. Te tomará menos de un minuto.</p>
+    <div id="form"></div>
+    <button class="btn primary" type="button" id="enviar" style="width:100%;font-size:1.05rem;margin-top:6px">Registrar mis datos</button>
+    <p class="privacidad">Usaremos estos datos solo para emitir tu comprobante y enviar tu pedido.</p>
+  </section>
+
+  <section id="v-ok" hidden>
+    <div class="ok-box">
+      <div class="ico" aria-hidden="true">✓</div>
+      <h2>¡Listo, tus datos fueron registrados!</h2>
+      <p id="ok-txt">Ya estamos preparando tu pedido.</p>
+      <button class="btn primary" type="button" id="avisar">Avisar a mi vendedor por WhatsApp</button>
+      <button class="btn" type="button" id="editar">Corregir mis datos</button>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast" role="status"></div>
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const token = new URLSearchParams(location.search).get("t") || "";
+  let orden = null, form = null, agenciasLista = [];
+  function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove("show"),2600)}
+  function error(msg){ $("#cargando").hidden=true; $("#v-form").hidden=true; $("#v-ok").hidden=true; const e=$("#error"); e.hidden=false; e.innerHTML=msg; }
+
+  async function cargar(){
+    if(token.length<20){ error("Este enlace no es válido. Pide a tu vendedor que te lo envíe de nuevo."); return; }
+    try{
+      const r = await fetch(TL.API_URL+"?action=cliente&t="+encodeURIComponent(token));
+      const j = await r.json();
+      if(!j.ok){ error("Este enlace no es válido o ya no está disponible. Pide a tu vendedor que te lo envíe de nuevo."); return; }
+      orden = j.orden; agenciasLista = j.agencias || []; mostrar();
+    }catch(e){ error("No pudimos conectarnos. Revisa tu internet y vuelve a abrir el enlace."); }
+  }
+  function mostrar(){
+    $("#cargando").hidden=true;
+    $("#p-codigo").textContent = orden.codigo;
+    $("#p-info").textContent = orden.fecha + (orden.vendedor ? " · Te atiende: " + orden.vendedor : "");
+    $("#p-prods").innerHTML = orden.productos.map(x=>'<li><b>'+x.q+' ×</b><span>'+esc(x.p)+(x.s?'<small>'+esc(x.s)+'</small>':'')+'</span></li>').join("");
+    if(!orden.editable){
+      if(orden.c){ $("#v-form").hidden=true; $("#v-ok").hidden=false; $("#editar").hidden=true;
+        $("#ok-txt").textContent = orden.vencido ? "Este enlace ya venció. Si necesitas cambiar algo, escribe a tu vendedor." : "Tu pedido ya está en preparación. Si necesitas cambiar algo, escribe a tu vendedor."; return; }
+      error(orden.vencido ? "Este enlace ya venció. Pide a tu vendedor uno nuevo." : "Este pedido ya está en preparación. Escribe a tu vendedor si necesitas ayuda.");
+      return;
+    }
+    if(orden.c){ $("#p-aviso").hidden=false; $("#p-aviso").textContent="Ya registraste tus datos. Puedes revisarlos y corregirlos antes de que preparemos tu pedido."; }
+    $("#v-form").hidden=false; $("#v-ok").hidden=true;
+    if(!form) form = FormCliente($("#form"), orden.c, { agencias: agenciasLista });
+  }
+  $("#enviar").onclick = async ()=>{
+    const c = form.validar(); if(!c){ toast("Revisa los campos marcados"); return; }
+    const b=$("#enviar"); b.disabled=true; b.textContent="Registrando…";
+    try{
+      const r = await fetch(TL.API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"clienteGuardar",t:token,c})});
+      const j = await r.json();
+      if(j.ok){ orden.c=c; $("#v-form").hidden=true; $("#v-ok").hidden=false; $("#editar").hidden=false; window.scrollTo(0,0); }
+      else if(j.error==="bloqueado"){ error("Tu pedido ya está en preparación, así que no se pueden cambiar los datos aquí. Escribe a tu vendedor."); }
+      else if(j.error==="vencido"){ error("Este enlace ya venció. Pide a tu vendedor uno nuevo."); }
+      else toast("Revisa los datos e inténtalo de nuevo");
+    }catch(e){ toast("Sin conexión. Inténtalo de nuevo."); }
+    b.disabled=false; b.textContent="Registrar mis datos";
+  };
+  $("#editar").onclick = ()=>{ $("#v-ok").hidden=true; $("#v-form").hidden=false; $("#p-aviso").hidden=true; window.scrollTo(0,0); };
+  $("#avisar").onclick = ()=>{
+    const c = orden.c || {};
+    const txt = "Hola"+(orden.vendedor?" "+orden.vendedor:"")+", ya registré mis datos para el pedido *"+orden.codigo+"*.\n"+
+      (c.nombre?"Comprobante: "+c.comprobante+" a nombre de "+c.nombre:"");
+    const tel = (orden.telVendedor||"").replace(/\D/g,"");
+    const a=document.createElement("a"); a.href="https://wa.me/"+tel+"?text="+encodeURIComponent(txt); a.target="_blank"; a.rel="noopener";
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+  cargar();
+})();
+</script>
+</body>
+</html>
