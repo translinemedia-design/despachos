@@ -44,6 +44,14 @@
     <div class="addrow" id="addrow" hidden><button type="button" class="btn sun" id="agregar-nuevo">Agregar al catálogo</button></div>
     <ul class="lines" id="lineas"></ul>
   </fieldset>
+  <fieldset id="box-destino">
+    <legend>Destino</legend>
+    <div class="seg" id="destino-nueva">
+      <button type="button" data-v="Lima">Lima</button>
+      <button type="button" data-v="Provincia">Provincia</button>
+    </div>
+    <div class="hint">El cliente lo confirma al llenar sus datos. Define el embalaje automático.</div>
+  </fieldset>
   <fieldset>
     <legend>Pago y embalaje</legend>
     <div class="chips" id="pago"></div>
@@ -64,7 +72,7 @@
       <button type="button" data-v="Los lleno yo">Los lleno yo</button>
     </div>
     <div id="box-link">
-      <p class="nota">Se creará la orden y se abrirá WhatsApp con un link para que el cliente complete su comprobante y sus datos de envío.</p>
+      <p class="nota">Al crear la orden podrás enviar el link al cliente y el mensaje al grupo de Envíos. Almacén puede alistar mientras el cliente completa sus datos.</p>
       <label class="f" for="tel-cliente">WhatsApp del cliente (opcional)</label>
       <input type="tel" id="tel-cliente" inputmode="tel" maxlength="12" placeholder="9 dígitos, para abrir su chat directo">
     </div>
@@ -79,7 +87,7 @@
     <select id="f-estado" aria-label="Filtrar por estado">
       <option value="activas">Sin despachar</option>
       <option value="">Todas</option>
-      <option>Esperando cliente</option><option>Pendiente</option><option>Alistado</option><option>Embalado</option><option>Despachado</option>
+      <option value="sindatos">Sin datos del cliente</option><option>Pendiente</option><option>Alistado</option><option>Embalado</option><option>Despachado</option>
     </select>
     <button class="btn" id="actualizar" type="button">Actualizar</button>
   </div>
@@ -94,6 +102,17 @@
   <div id="lista-imp-hechas"></div>
 </section>
 
+<section class="view" id="v-creada" hidden>
+  <div class="ok-box" style="padding-top:10px">
+    <div class="ico" aria-hidden="true">✓</div>
+    <h2>Orden <span id="c-codigo"></span> creada</h2>
+    <p>Envía cada mensaje a su chat o grupo:</p>
+  </div>
+  <div id="c-pasos"></div>
+  <p class="nota" id="c-nota"></p>
+  <div class="filters" style="margin-top:16px"><button class="btn primary" id="c-otra" type="button" style="flex:1">Crear otra orden</button><button class="btn" id="c-ver" type="button">Ver en mis órdenes</button></div>
+</section>
+
 <section class="view" id="v-datos" hidden>
   <p class="nota" style="margin-top:0">Datos del cliente para la orden <b id="d-codigo"></b></p>
   <div id="form-datos"></div>
@@ -104,8 +123,7 @@
 <div class="dock" id="dock">
   <div class="missing" id="missing"></div>
   <div class="in">
-    <button class="btn" type="button" id="copiar">Copiar link</button>
-    <button class="btn primary" type="button" id="enviar">Crear y enviar link al cliente</button>
+    <button class="btn primary" type="button" id="enviar">Crear orden</button>
   </div>
 </div>
 <div class="toast" id="toast" role="status"></div>
@@ -123,6 +141,7 @@
 </div>
 
 <script>const CAT_BASE = [{"s":"CET-103-50W","n":"Reflector Solar 50W aplique","c":"Reflector"},{"s":"BL-911-200W","n":"Reflector Portátil Solar 200W Celeste","c":"Reflector"},{"s":"TR-105A-300W","n":"Reflector Solar 300W","c":"Reflector"},{"s":"TR-105A-500W","n":"Reflector Solar 500W","c":"Reflector"},{"s":"TR-105A-1200W","n":"Reflector Solar 1200W","c":"Reflector"},{"s":"TR-105A-1500W","n":"Reflector Solar 1500W","c":"Reflector"},{"s":"TR-296B-1200W","n":"Reflector Solar 1200W - 2027","c":"Reflector"},{"s":"TR-296B-1500W","n":"Reflector Solar 1500W - 2027","c":"Reflector"},{"s":"TR-106D-2500W","n":"Reflector Solar 2500W","c":"Reflector"},{"s":"TR-230-100W","n":"Pastoral Solar 100W","c":"Pastoral"},{"s":"TR-230-300W","n":"Pastoral Solar 300W","c":"Pastoral"},{"s":"TR-30TR-1000W","n":"Pastoral Solar Triple Cara 1000W","c":"Pastoral"},{"s":"TER-40TR-1200W","n":"Pastoral Solar Triple Cara 1200W","c":"Pastoral"},{"s":"TR-190-200W","n":"Pastoral Solar Integrado Premium 200W","c":"Pastoral"},{"s":"TR-168-400W","n":"Pastoral Panel Solar Externo Premium 400W","c":"Pastoral"},{"s":"TR-113-120W 6500K","n":"Farola Isla Solar Premium 120W","c":"Farola"},{"s":"TR-193-1500W","n":"Pastoral Solar Integrado Premium 1500W","c":"Pastoral"},{"s":"TR-193-1800W","n":"Pastoral Solar Integrado Premium 1800W","c":"Pastoral"},{"s":"TR-196-400W","n":"Pastoral Solar Integrado Premium 400W","c":"Pastoral"},{"s":"TR-SLV2-60W","n":"Luminaria Solar Integrada Profesional 60W","c":"Profesional"},{"s":"TR-194-120W","n":"Luminaria Solar Integrada Profesional 120W","c":"Profesional"},{"s":"TR-SLV-200W","n":"Luminaria Solar Integrada Profesional TITAN 200W","c":"Profesional"},{"s":"TR-BEX-600W","n":"Luminaria Solar Profesional Batería Externa 600W","c":"Profesional"},{"s":"TR-198-120","n":"Luminaria Solar Integrada Profesional ATLAS 120W","c":"Profesional"},{"s":"TR-193TR-150W","n":"Luminaria Solar Integrada Profesional OLYMPO 150W","c":"Profesional"},{"s":"TR-193TR-200W","n":"Luminaria Solar Integrada Profesional OLYMPO MAX 200W","c":"Profesional"},{"s":"TR-197-60W","n":"Luminaria Solar Integrada Profesional JET 60W","c":"Profesional"},{"s":"TR-197-80W","n":"Luminaria Solar Integrada Profesional JET 80W","c":"Profesional"},{"s":"TR-197-100W","n":"Luminaria Solar Integrada Profesional JET 100W","c":"Profesional"},{"s":"TR-214-50W","n":"Farola UFO 50W Profesional","c":"Farola"},{"s":"","n":"Estación de Energía Portátil 300W","c":"Energía portátil"},{"s":"","n":"Estación de Energía Portátil 1200W","c":"Energía portátil"},{"s":"","n":"Estación de Energía Portátil 2500W","c":"Energía portátil"},{"s":"","n":"USP Kit Solar Energía Portátil 500W","c":"Energía portátil"},{"s":"","n":"Panel solar plegable 50W","c":"Energía portátil"},{"s":"","n":"Panel solar plegable 100W","c":"Energía portátil"},{"s":"","n":"Panel solar plegable 400W","c":"Energía portátil"},{"s":"","n":"Power Bank Solar 4000 mAh","c":"Energía portátil"},{"s":"","n":"Brazo Metálico L para UFO","c":"Accesorios"},{"s":"","n":"Kit para UFO Poste 2.5 metros con base de policarbonato","c":"Accesorios"},{"s":"","n":"KIT UFO SOLAR","c":"Combos"}];</script>
+<script src="logo-etiqueta.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

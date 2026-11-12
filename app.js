@@ -4,7 +4,7 @@ const $ = s => document.querySelector(s);
 const LS = { get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}} };
 const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const pad = n => String(n).padStart(2,"0");
-const ESTADOS = ["Esperando cliente","Pendiente","Alistado","Embalado","Despachado"];
+const ESTADOS = ["Pendiente","Alistado","Embalado","Despachado"];
 const PAGOS = ["Cancelado","Pendiente","Contraentrega","Adelanto"];
 const EXTRA_KEY = "tl_extra";
 const key = p => p.n+"|"+(p.s||"");
@@ -17,13 +17,14 @@ let catSel = "";
 let agencias = LS.get("tl_agencias",[]);
 const opForm = () => ({ agencias, buscarCliente: async doc => { const r=await fetch(TL.API_URL+"?action=buscarCliente&pin="+encodeURIComponent(PIN)+"&doc="+doc); const j=await r.json(); return j.ok?j.cliente:null; } });
 let nuevos = new Set(LS.get("tl_nuevos",[]));
-let estadosPrev = LS.get("tl_estados",null);
+let estadosPrev = LS.get("tl_estados3",null);
 let formNueva = null, formDatos = null, ordenDatos = null;
-const S = { lineas:[], pago:"Cancelado", embalaje:"Automático", quien:"El cliente (link)" };
+const S = { lineas:[], pago:"Cancelado", embalaje:"Automático", quien:"El cliente (link)", destino:"" };
+let creada = null, hechos = new Set();
 
 /* ---------- utilidades ---------- */
 function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove("show"),2800)}
-function nuevoCodigo(){const d=new Date();return "TL-"+pad(d.getDate())+pad(d.getMonth()+1)+"-"+pad(d.getHours())+pad(d.getMinutes())+Math.random().toString(36).slice(2,4).toUpperCase()}
+function idTemporal(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 function abrir(url){const a=document.createElement("a");a.href=url;a.target="_blank";a.rel="noopener";document.body.appendChild(a);a.click();a.remove()}
 function abrirWA(txt,tel){ tel=(tel||"").replace(/\D/g,""); if(tel&&tel.length===9) tel="51"+tel; abrir("https://wa.me/"+tel+"?text="+encodeURIComponent(txt)); }
 async function copiar(txt){try{await navigator.clipboard.writeText(txt);return true}catch(e){const ta=document.createElement("textarea");ta.value=txt;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand("copy")}catch(_){}ta.remove();return ok}}
@@ -49,44 +50,68 @@ function sonar(){
       o.connect(g).connect(audio.destination);o.start(t+d);o.stop(t+d+.3)}); }catch(e){}
   try{ navigator.vibrate&&navigator.vibrate([200,100,200]); }catch(e){}
 }
+function firma(o){ return o.estado+"|"+(o.c?1:0); }
 function detectarCambios(){
-  const actual={}; ordenes.forEach(o=>actual[o.codigo]=o.estado);
+  const actual={}; ordenes.forEach(o=>actual[o.codigo]=firma(o));
   if(estadosPrev){
-    const listos=[], nuevasAlm=[];
+    const datosV=[], nuevasA=[], listasA=[];
     ordenes.forEach(o=>{
-      const antes=estadosPrev[o.codigo];
-      if(rol("vendedor","admin") && antes==="Esperando cliente" && o.estado!=="Esperando cliente" && (U.rol==="admin"||o.vendedor===U.nombre)){ listos.push(o); nuevos.add(o.codigo); }
-      if(rol("almacen","admin") && o.estado==="Pendiente" && antes!=="Pendiente" && (antes===undefined||antes==="Esperando cliente")) nuevasAlm.push(o);
+      const antes=estadosPrev[o.codigo], teniaDatos=antes&&antes.endsWith("|1");
+      if(o.c && antes!==undefined && !teniaDatos){
+        if(rol("vendedor","admin") && (U.rol==="admin"||o.vendedor===U.nombre)){ datosV.push(o); nuevos.add(o.codigo); }
+        if(rol("almacen","admin") && o.estado==="Embalado" && o.bultos) listasA.push(o);
+      }
+      if(antes===undefined && rol("almacen")) nuevasA.push(o);
     });
-    if(listos.length){ sonar(); toast(listos.length===1?("✅ "+(listos[0].c?listos[0].c.nombre:listos[0].codigo)+" completó sus datos"):("✅ "+listos.length+" clientes completaron sus datos")); }
-    else if(nuevasAlm.length){ sonar(); toast(nuevasAlm.length===1?"📦 Nueva orden para alistar: "+nuevasAlm[0].codigo:"📦 "+nuevasAlm.length+" órdenes nuevas para alistar"); }
+    if(datosV.length){ sonar(); toast(datosV.length===1?"✅ "+datosV[0].codigo+": "+datosV[0].c.nombre+" completó sus datos":"✅ "+datosV.length+" clientes completaron sus datos"); }
+    else if(listasA.length){ sonar(); toast("🏷️ Etiquetas listas para imprimir: "+listasA.map(o=>o.codigo).join(", ")); }
+    else if(nuevasA.length){ sonar(); toast(nuevasA.length===1?"📦 Nueva orden para alistar: "+nuevasA[0].codigo:"📦 "+nuevasA.length+" órdenes nuevas para alistar"); }
   }
-  estadosPrev=actual; LS.set("tl_estados",actual); LS.set("tl_nuevos",[...nuevos]);
+  estadosPrev=actual; LS.set("tl_estados3",actual); LS.set("tl_nuevos",[...nuevos]);
   document.title=(nuevos.size?"("+nuevos.size+") ":"")+"Órdenes de despacho · Transline";
 }
 function visto(cod){ if(nuevos.delete(cod)){ LS.set("tl_nuevos",[...nuevos]); document.title=(nuevos.size?"("+nuevos.size+") ":"")+"Órdenes de despacho · Transline"; } }
 
 /* ---------- mensajes ---------- */
+function destinoDe(o){ return o.c ? o.c.destino : (o.destinoPrev||""); }
 function msgLink(o){
   return "Hola 👋, gracias por tu compra en *Transline*.\n\nPara emitir tu comprobante y preparar tu pedido *"+o.codigo+"*, completa tus datos aquí:\n"+linkCliente(o)+"\n\nTe tomará menos de un minuto.";
 }
-function msgAlmacen(o){
-  const c=o.c||{}, L=[];
-  L.push("📦 *ORDEN DE DESPACHO – TRANSLINE*"); L.push("🔢 "+o.codigo);
-  L.push("🗓️ "+o.fecha+"  |  👤 "+o.vendedor); L.push("");
-  L.push("🧾 *"+(c.comprobante||"—").toUpperCase()+"*"); L.push("🧑 *"+(c.nombre||"—")+"*"); L.push("🪪 "+(c.tipoDoc||"")+" "+(c.doc||"")+"  |  📞 "+(c.tel||""));
-  if(c.atencion&&c.atencion.nombre) L.push("👉 *Atención a:* "+c.atencion.nombre+" · DNI "+c.atencion.doc+" · Tel. "+c.atencion.tel);
+/* Grupo de Envíos (almacén): ligero, sin datos de facturación ni del cliente */
+function msgEnvios(o){
+  const c=o.c, L=[], d=destinoDe(o);
+  L.push("📦 *"+o.codigo+"* · "+o.vendedor);
+  if(d==="Provincia"){ const ciudad=c&&c.ciudad?" – "+c.ciudad:""; const ag=c&&c.agencia?c.agencia+(c.entrega==="Entrega a domicilio"?" · a domicilio":(c.sede?" ("+c.sede+")":"")):"Agencia por confirmar"; L.push("📍 Provincia"+ciudad+" · "+ag); }
+  else if(d==="Lima"){ L.push("📍 Lima"+(c?(c.entrega==="Recojo en tienda"?" · Recojo en tienda":(c.distrito?" – "+c.distrito:"")):"")); }
+  else L.push("📍 Destino por confirmar");
+  if(o.embalaje) L.push("🎁 "+o.embalaje);
+  if(o.pago==="Contraentrega") L.push("💵 *CONTRAENTREGA*: cobrar al entregar");
   L.push("");
-  if(c.destino==="Provincia"){ L.push("📍 *PROVINCIA – "+(c.ciudad||"").toUpperCase()+"*"); L.push("🚚 *Agencia:* "+c.agencia+(c.sede?" ("+c.sede+")":"")); }
-  else if(c.entrega==="Recojo en tienda"){ L.push("📍 *LIMA – RECOJO EN TIENDA*"); }
-  else { L.push("📍 *LIMA – "+(c.distrito||"").toUpperCase()+"*"); L.push("🏠 "+(c.direccion||"")+(c.referencia?" (Ref.: "+c.referencia+")":"")); }
-  L.push("🎁 *"+(o.embalaje||"").toUpperCase()+"*"); L.push("");
-  L.push("🛒 *Productos:*"); o.productos.forEach(x=>L.push("• "+x.q+" × "+x.p+(x.s?" ("+x.s+")":""))); L.push("");
-  L.push("💰 *Pago:* "+o.pago); if(o.obs) L.push("📝 *Obs.:* "+o.obs);
-  if(o.estado&&o.estado!=="Pendiente") L.push("\n✅ *Estado:* "+o.estado);
+  const total=o.productos.reduce((a,x)=>a+(+x.q||0),0);
+  L.push("🛒 *"+total+" producto"+(total===1?"":"s")+":*");
+  o.productos.forEach(x=>L.push("• "+x.q+" × "+x.p+(x.s?" ("+x.s+")":"")));
+  if(o.obs){ L.push(""); L.push("📝 "+o.obs); }
   return L.join("\n");
 }
-
+/* Grupo de Comprobantes (comercial): todos los datos para factura, boleta y guía */
+function msgComprobantes(o){
+  const c=o.c||{}, L=[];
+  L.push("📄 *"+o.codigo+"* · "+o.vendedor); L.push("");
+  L.push("🧾 *"+(c.comprobante||"—").toUpperCase()+"*");
+  L.push("🧑 *"+(c.nombre||"—")+"*");
+  L.push("🪪 "+(c.tipoDoc||"")+" "+(c.doc||"")+"  |  📞 "+(c.tel||""));
+  if(c.atencion&&c.atencion.nombre) L.push("👉 *Atención a:* "+c.atencion.nombre+" · DNI "+c.atencion.doc+" · Tel. "+c.atencion.tel);
+  L.push("");
+  if(c.destino==="Provincia"){ L.push("📍 *PROVINCIA – "+(c.ciudad||"").toUpperCase()+"*");
+    if(c.entrega==="Entrega a domicilio"){ L.push("🚚 Agencia: "+c.agencia+" · entrega a domicilio"); L.push("🏠 "+(c.direccion||"")+(c.distrito?", "+c.distrito:"")+(c.referencia?" (Ref.: "+c.referencia+")":"")); }
+    else L.push("🚚 Agencia: "+c.agencia+(c.sede?" ("+c.sede+")":"")); }
+  else if(c.entrega==="Recojo en tienda") L.push("📍 *LIMA – RECOJO EN TIENDA*");
+  else { L.push("📍 *LIMA – "+(c.distrito||"").toUpperCase()+"*"); L.push("🏠 "+(c.direccion||"")+(c.referencia?" (Ref.: "+c.referencia+")":"")); }
+  L.push("");
+  L.push("🛒 *Productos:*"); o.productos.forEach(x=>L.push("• "+x.q+" × "+x.p+(x.s?" ("+x.s+")":"")));
+  L.push(""); L.push("💰 *Pago:* "+o.pago); if(o.obs) L.push("📝 *Obs.:* "+o.obs);
+  return L.join("\n");
+}
 /* ---------- catálogo ---------- */
 function renderCats(){
   const el=$("#cats");el.innerHTML="";
@@ -124,32 +149,64 @@ function seg(el,k){el.querySelectorAll("button").forEach(b=>{b.setAttribute("ari
 chips($("#pago"),PAGOS,"pago"); seg($("#embalaje"),"embalaje"); seg($("#quien"),"quien");
 function sync(){
   const yo=S.quien==="Los lleno yo";
-  $("#box-link").hidden=yo; $("#box-yo").hidden=!yo;
-  if(yo&&!formNueva) formNueva=FormCliente($("#form-nueva"),null,opForm());
-  const falta=[]; if(!S.lineas.length) falta.push("productos");
+  $("#box-link").hidden=yo; $("#box-yo").hidden=!yo; $("#box-destino").hidden=yo;
+  if(yo&&!formNueva) formNueva=FormCliente($("#form-nueva"),S.destino?{destino:S.destino}:null,opForm());
+  const falta=[]; if(!S.lineas.length) falta.push("productos"); if(!yo&&!S.destino) falta.push("Lima o Provincia");
   $("#missing").textContent=falta.length?"Falta: "+falta.join(", "):"";
-  $("#enviar").textContent=yo?"Crear y enviar a almacén":"Crear y enviar link al cliente";
-  $("#copiar").textContent=yo?"Copiar":"Copiar link";
+  $("#enviar").disabled=!!falta.length;
 }
-function limpiarNueva(){ S.lineas=[]; S.pago="Cancelado"; S.embalaje="Automático"; chips($("#pago"),PAGOS,"pago"); seg($("#embalaje"),"embalaje");
-  ["#obs","#tel-cliente","#buscar"].forEach(id=>$(id).value=""); if(formNueva){ $("#form-nueva").innerHTML=""; formNueva=null; } renderLineas(); sync(); window.scrollTo(0,0); }
-async function crearOrden(modo){
+function limpiarNueva(){ S.lineas=[]; S.pago="Cancelado"; S.embalaje="Automático"; S.destino=""; chips($("#pago"),PAGOS,"pago"); seg($("#embalaje"),"embalaje"); seg($("#destino-nueva"),"destino");
+  ["#obs","#tel-cliente","#buscar"].forEach(id=>$(id).value=""); if(formNueva){ $("#form-nueva").innerHTML=""; formNueva=null; } renderLineas(); sync(); }
+seg($("#destino-nueva"),"destino");
+let idPendiente=null;
+async function crearOrden(){
   if(!S.lineas.length){ toast("Agrega al menos un producto"); return; }
   const yo=S.quien==="Los lleno yo"; let c=null;
   if(yo){ c=formNueva.validar(); if(!c){ toast("Revisa los datos del cliente"); return; } }
-  const orden={codigo:nuevoCodigo(),productos:S.lineas.map(l=>({p:l.p,s:l.s,q:l.q})),pago:S.pago,obs:$("#obs").value.trim(),
-    telCliente:$("#tel-cliente").value.replace(/\D/g,""),embalajeModo:S.embalaje,c};
-  const b1=$("#enviar"),b2=$("#copiar"); b1.disabled=b2.disabled=true; const txt=b1.textContent; b1.textContent="Creando…";
+  else if(!S.destino){ toast("Elige Lima o Provincia"); return; }
+  idPendiente=idPendiente||idTemporal();
+  const orden={idc:idPendiente,productos:S.lineas.map(l=>({p:l.p,s:l.s,q:l.q})),pago:S.pago,obs:$("#obs").value.trim(),
+    telCliente:$("#tel-cliente").value.replace(/\D/g,""),embalajeModo:S.embalaje,destino:yo?c.destino:S.destino,c};
+  const b=$("#enviar"); b.disabled=true; b.textContent="Creando…";
   try{
-    const j=await api({action:"crear",orden}); const o=j.orden; reemplazar(o); estadosPrev&&(estadosPrev[o.codigo]=o.estado); renderLista();
-    const msg=yo?msgAlmacen(o):msgLink(o);
-    if(modo==="wa") abrirWA(msg, yo?"":o.telCliente); else { const ok=await copiar(msg); toast(ok?(yo?"Orden copiada. Pégala en el grupo.":"Link copiado. Pégalo en el chat del cliente."):"No se pudo copiar"); }
-    toast("Orden "+o.codigo+" creada"); limpiarNueva();
-  }catch(e){ toast(e.message==="pin"?"Tu PIN ya no es válido":"No se pudo crear la orden. Revisa tu conexión."); if(e.message==="pin") salir(); }
-  b1.disabled=b2.disabled=false; b1.textContent=txt; sync();
+    const j=await api({action:"crear",orden}); const o=j.orden; idPendiente=null;
+    reemplazar(o); estadosPrev&&(estadosPrev[o.codigo]=firma(o)); LS.set("tl_estados3",estadosPrev); renderLista();
+    limpiarNueva(); mostrarCreada(o);
+  }catch(e){ toast(e.message==="pin"?"Tu PIN ya no es válido":"No se pudo crear la orden. Revisa tu conexión e inténtalo de nuevo."); if(e.message==="pin") salir(); }
+  b.textContent="Crear orden"; sync();
 }
-$("#enviar").onclick=()=>crearOrden("wa");
-$("#copiar").onclick=()=>crearOrden("copiar");
+$("#enviar").onclick=crearOrden;
+
+/* ---------- pantalla "orden creada": los mensajes a enviar ---------- */
+function pasosDe(o){
+  const p=[];
+  if(o._soloEnvios){ p.push({k:"envios",t:"📦 Copiar para Envíos",d:"",msg:()=>msgEnvios(o)}); return p; }
+  if(!o.c) p.push({k:"link",t:"Enviar link al cliente",d:"Para que llene su comprobante y datos de envío.",msg:()=>msgLink(o),tel:o.telCliente});
+  p.push({k:"envios",t:"📦 Enviar a Envíos",d:"Grupo de almacén: productos a alistar, sin datos de facturación.",msg:()=>msgEnvios(o)});
+  if(o.c) p.push({k:"comprob",t:"📄 Enviar a Comprobantes",d:"Grupo comercial: factura o boleta y guía de remisión.",msg:()=>msgComprobantes(o)});
+  return p;
+}
+function botonesPasos(o,cont,grande){
+  pasosDe(o).forEach(p=>{
+    const hecho=hechos.has(o.codigo+":"+p.k);
+    const row=document.createElement("div"); row.className="paso"+(hecho?" hecho":"");
+    row.innerHTML=(grande?'<div class="paso-t"><b>'+(hecho?"✓ ":"")+esc(p.t)+'</b><small>'+esc(p.d)+'</small></div>':'')+
+      '<div class="paso-b"><button type="button" class="btn '+(hecho?'':'primary')+'">'+(grande?"Abrir WhatsApp":(hecho?"✓ ":"")+esc(p.t))+'</button><button type="button" class="btn">Copiar</button></div>';
+    const [wa,cp]=row.querySelectorAll("button");
+    const marcar=()=>{hechos.add(o.codigo+":"+p.k); if(p.k==="envios"||p.k==="comprob") visto(o.codigo); grande?mostrarCreada(o):renderLista();};
+    wa.onclick=()=>{abrirWA(p.msg(),p.tel||""); marcar();};
+    cp.onclick=async()=>{toast(await copiar(p.msg())?"Copiado. Pégalo en el chat o grupo.":"No se pudo copiar"); marcar();};
+    cont.appendChild(row);
+  });
+}
+function mostrarCreada(o){
+  creada=o; $("#c-codigo").textContent=o.codigo;
+  const cont=$("#c-pasos"); cont.innerHTML=""; botonesPasos(o,cont,true);
+  $("#c-nota").textContent=o.c?"":"Cuando el cliente complete sus datos te sonará un aviso y podrás enviar la orden al grupo de Comprobantes desde Mis órdenes.";
+  tab("creada");
+}
+$("#c-otra").onclick=()=>tab("nueva");
+$("#c-ver").onclick=()=>{tab("ordenes"); $("#f-buscar").value=creada?creada.codigo:""; renderLista();};
 
 /* ---------- llenar datos de una orden existente ---------- */
 function abrirDatos(o){
@@ -160,64 +217,54 @@ $("#d-cancelar").onclick=()=>tab("ordenes");
 $("#d-guardar").onclick=async()=>{
   const c=formDatos.validar(); if(!c){ toast("Revisa los datos del cliente"); return; }
   const b=$("#d-guardar"); b.disabled=true;
-  try{ const j=await api({action:"datos",codigo:ordenDatos.codigo,c}); reemplazar(j.orden); estadosPrev&&(estadosPrev[j.orden.codigo]=j.orden.estado); renderLista(); tab("ordenes"); toast("Datos guardados. Ya puedes enviarla a almacén."); }
+  try{ const j=await api({action:"datos",codigo:ordenDatos.codigo,c}); reemplazar(j.orden); estadosPrev&&(estadosPrev[j.orden.codigo]=firma(j.orden)); renderLista(); tab("ordenes"); toast("Datos guardados. Ya puedes enviarla a almacén."); }
   catch(e){ toast(e.message==="bloqueado"?"La orden ya está en preparación":"No se pudieron guardar los datos"); }
   b.disabled=false;
 };
 
 /* ---------- lista de órdenes ---------- */
-function lugarCorto(o){ const c=o.c; if(!c) return "Sin datos del cliente"; if(c.destino==="Provincia") return "Provincia · "+c.ciudad+" · "+c.agencia; return "Lima · "+(c.entrega==="Recojo en tienda"?"Recojo en tienda":c.distrito); }
+function lugarCorto(o){ const c=o.c; if(!c) return (o.destinoPrev?o.destinoPrev+" · ":"")+"Esperando datos del cliente"; if(c.destino==="Provincia") return "Provincia · "+c.ciudad+" · "+c.agencia+(c.entrega==="Entrega a domicilio"?" · a domicilio":""); return "Lima · "+(c.entrega==="Recojo en tienda"?"Recojo en tienda":c.distrito); }
 function renderLista(){
   const fe=$("#f-estado").value, q=$("#f-buscar").value.trim().toLowerCase();
-  const pend=ordenes.filter(o=>U&&(U.rol==="almacen"?["Pendiente","Alistado","Embalado"].includes(o.estado):o.estado!=="Despachado")).length;
-  $("#pend").textContent=pend;
+  $("#pend").textContent=ordenes.filter(o=>o.estado!=="Despachado").length;
   const porImp=ordenes.filter(o=>o.estado==="Embalado"&&o.bultos&&!(o.t&&o.t.impreso)).length;
   $("#pend-imp").textContent=porImp; $("#pend-imp").hidden=!porImp;
   const list=ordenes.filter(o=>{
     if(fe==="activas"){ if(o.estado==="Despachado") return false; }
+    else if(fe==="sindatos"){ if(o.c) return false; }
     else if(fe && o.estado!==fe) return false;
     if(q){ const h=(o.codigo+" "+(o.c?o.c.nombre+" "+o.c.doc:"")+" "+o.vendedor).toLowerCase(); if(!h.includes(q)) return false; }
     return true; });
   const el=$("#lista"); el.innerHTML="";
   const n=[...nuevos].filter(c=>ordenes.some(o=>o.codigo===c)).length;
-  $("#banner-nuevos").hidden=!n; $("#banner-nuevos").textContent=n===1?"🔔 1 cliente completó sus datos. Envía su orden a almacén.":"🔔 "+n+" clientes completaron sus datos. Envía sus órdenes a almacén.";
+  $("#banner-nuevos").hidden=!n; $("#banner-nuevos").textContent=n===1?"🔔 1 cliente completó sus datos. Envía su orden a Comprobantes.":"🔔 "+n+" clientes completaron sus datos. Envía sus órdenes a Comprobantes.";
   if(!list.length){ el.innerHTML='<p class="vacio">'+(ordenes.length?"No hay órdenes con ese filtro.":"Aún no hay órdenes.")+'</p>'; return; }
   list.forEach(o=>{
     const d=document.createElement("div"); d.className="order"+(nuevos.has(o.codigo)?" nuevo":"");
-    const c=o.c; const idx=ESTADOS.indexOf(o.estado);
-    let h='<div class="top"><b>'+esc(c?c.nombre:"Cliente por confirmar")+'</b>'+(nuevos.has(o.codigo)?'<span class="nuevo-tag">DATOS NUEVOS</span>':'')+
-      '<span>'+esc(o.codigo)+' · '+esc(o.fecha)+' · '+esc(o.vendedor)+'</span></div>'+
-      '<div style="margin-top:6px"><span class="chip-e '+claseEstado(o.estado)+'">'+esc(o.estado)+'</span>'+(c?' <span class="chip-e">'+esc(c.comprobante)+'</span>':'')+(o.bultos?' <span class="chip-e">'+o.bultos+' bulto'+(o.bultos>1?'s':'')+'</span>':'')+'</div>'+
+    const c=o.c, idx=ESTADOS.indexOf(o.estado), impresa=!!(o.t&&o.t.impreso);
+    let h='<div class="top"><b>'+esc(o.codigo)+'</b>'+(nuevos.has(o.codigo)?'<span class="nuevo-tag">DATOS NUEVOS</span>':'')+
+      '<span>'+esc(c?c.nombre:"Cliente por confirmar")+' · '+esc(o.vendedor)+'</span></div>'+
+      '<div style="margin-top:6px"><span class="chip-e '+claseEstado(o.estado)+'">'+esc(o.estado)+'</span>'+(c?' <span class="chip-e">'+esc(c.comprobante)+'</span>':' <span class="chip-e esperando">Sin datos del cliente</span>')+(o.bultos?' <span class="chip-e">'+o.bultos+' bulto'+(o.bultos>1?'s':'')+'</span>':'')+'</div>'+
       '<div class="dest-l">'+esc(lugarCorto(o))+(o.embalaje?' · '+esc(o.embalaje):'')+'</div>'+
       (c&&c.atencion?'<div class="dest-l">Atención a: '+esc(c.atencion.nombre)+'</div>':'')+
       '<div class="items">'+o.productos.map(x=>x.q+" × "+esc(x.p)).join(", ")+'</div>';
-    if(rol("almacen","admin") && c){
-      h+='<div class="states">'+["Pendiente","Alistado","Embalado","Despachado"].map((s,i)=>'<button type="button" data-s="'+s+'" class="'+(i+1<=idx?"done":"")+'">'+s+'</button>').join("")+'</div>'+
+    if(rol("almacen","admin")){
+      h+='<div class="states">'+ESTADOS.map((s,i)=>'<button type="button" data-s="'+s+'" class="'+(i<=idx?"done":"")+'">'+s+'</button>').join("")+'</div>'+
         '<div class="bultos" hidden><label for="b-'+o.codigo+'">¿Cuántos bultos?</label><input id="b-'+o.codigo+'" type="tel" inputmode="numeric" value="'+(o.bultos||1)+'"><button type="button" class="btn sun" data-a="emb-ok">Confirmar</button><button type="button" class="btn" data-a="emb-no">Cancelar</button></div>';
     }
-    h+='<div class="acts">';
-    if(rol("vendedor","admin")){
-      if(o.estado==="Esperando cliente"){
-        if(o.token) h+='<button type="button" class="btn primary" data-a="link">Enviar link</button><button type="button" class="btn" data-a="copiar-link">Copiar link</button>';
-        h+='<button type="button" class="btn" data-a="llenar">Llenar yo los datos</button>';
-      } else {
-        h+='<button type="button" class="btn primary" data-a="almacen">Enviar a almacén</button><button type="button" class="btn" data-a="copiar">Copiar</button>';
-        if(o.estado==="Pendiente") h+='<button type="button" class="btn" data-a="llenar">Corregir datos</button>';
-      }
-      if(nuevos.has(o.codigo)) h+='<button type="button" class="btn" data-a="visto">Marcar como visto</button>';
-    } else if(c){
-      h+='<button type="button" class="btn" data-a="copiar">Copiar</button>';
-    }
+    h+='<div class="pasos"></div><div class="acts">';
+    if(rol("vendedor","admin") && !impresa && o.estado!=="Despachado") h+='<button type="button" class="btn" data-a="llenar">'+(c?"Corregir datos":"Llenar yo los datos")+'</button>';
+    if(c&&o.token&&rol("vendedor","admin")) h+='';
+    if(nuevos.has(o.codigo)) h+='<button type="button" class="btn" data-a="visto">Marcar como visto</button>';
     h+='</div>'; d.innerHTML=h;
+    if(rol("vendedor","admin")) botonesPasos(o,d.querySelector(".pasos"),false);
+    else botonesPasos({...o,c:null,token:null,_soloEnvios:true},d.querySelector(".pasos"),false);
     const on=(a,fn)=>{const b=d.querySelector('[data-a="'+a+'"]'); if(b) b.onclick=fn;};
-    on("link",()=>abrirWA(msgLink(o),o.telCliente));
-    on("copiar-link",async()=>toast(await copiar(msgLink(o))?"Link copiado":"No se pudo copiar"));
     on("llenar",()=>abrirDatos(o));
-    on("almacen",()=>{visto(o.codigo);abrirWA(msgAlmacen(o));renderLista()});
-    on("copiar",async()=>{visto(o.codigo);toast(await copiar(msgAlmacen(o))?"Orden copiada. Pégala en el grupo.":"No se pudo copiar");renderLista()});
     on("visto",()=>{visto(o.codigo);renderLista()});
     d.querySelectorAll(".states button").forEach(b=>b.onclick=()=>{
       if(b.dataset.s==="Embalado"){ d.querySelector(".bultos").hidden=false; d.querySelector(".bultos input").focus(); return; }
+      if(b.dataset.s==="Despachado"&&!c){ toast("Falta que el cliente complete sus datos"); return; }
       cambiarEstado(o,b.dataset.s);
     });
     on("emb-ok",()=>{const n=parseInt(d.querySelector(".bultos input").value,10); if(!(n>=1&&n<=99)){toast("Ingresa entre 1 y 99 bultos");return} cambiarEstado(o,"Embalado",n)});
@@ -226,9 +273,9 @@ function renderLista(){
   });
 }
 async function cambiarEstado(o,estado,bultos){
-  try{ const j=await api({action:"estado",codigo:o.codigo,estado,bultos}); reemplazar(j.orden); estadosPrev&&(estadosPrev[o.codigo]=j.orden.estado); LS.set("tl_estados",estadosPrev);
-    renderLista(); renderImprimir(); toast(estado==="Embalado"?"Embalado · pasó a Por imprimir":"Estado: "+estado); }
-  catch(e){ toast(e.message==="permiso"?"Tu usuario no puede cambiar estados":"No se pudo actualizar. Revisa tu conexión."); }
+  try{ const j=await api({action:"estado",codigo:o.codigo,estado,bultos}); reemplazar(j.orden); estadosPrev&&(estadosPrev[o.codigo]=firma(j.orden)); LS.set("tl_estados3",estadosPrev);
+    renderLista(); renderImprimir(); toast(estado==="Embalado"?(j.orden.c?"Embalado · pasó a Por imprimir":"Embalado · las etiquetas saldrán cuando el cliente complete sus datos"):"Estado: "+estado); }
+  catch(e){ toast(e.message==="permiso"?"Tu usuario no puede cambiar estados":e.message==="sin_datos"?"Falta que el cliente complete sus datos":"No se pudo actualizar. Revisa tu conexión."); }
 }
 $("#f-estado").onchange=renderLista; $("#f-buscar").addEventListener("input",renderLista);
 $("#actualizar").onclick=()=>cargar();
@@ -242,14 +289,16 @@ function etiqueta(o,i,n){
   const c=o.c||{}, a=c.atencion;
   const fecha=(o.fecha||"").split(" ")[0];
   let detalle="";
-  if(c.destino==="Provincia") detalle="Agencia "+(c.agencia||"")+(c.sede?" · "+c.sede:"");
+  const domProv=c.destino==="Provincia"&&c.entrega==="Entrega a domicilio";
+  if(domProv) detalle=(c.agencia||"")+" · Entrega a domicilio";
+  else if(c.destino==="Provincia") detalle="Agencia "+(c.agencia||"")+(c.sede?" · "+c.sede:"");
   else if(c.entrega==="Recojo en tienda") detalle="Recoge en tienda";
   else detalle="Entrega: Delivery";
   let medio="";
   if(a&&a.nombre) medio='<div class="att"><b>ATENCIÓN A:</b> '+esc(a.nombre)+'<br>DNI '+esc(a.doc)+' · Tel. '+esc(a.tel)+'</div>';
   else medio='<p class="doc" style="margin-top:.8mm">Tel. '+esc(c.tel||"")+'</p>';
-  if(c.destino==="Lima"&&c.entrega==="Delivery") medio+='<p class="doc" style="margin-top:.6mm">'+esc(c.direccion||"")+(c.referencia?'<br>Ref.: '+esc(c.referencia):'')+'</p>';
-  return '<div class="et"><div class="top"><span class="brand">TRANSLINE</span><span style="display:flex;align-items:center"><span class="code">'+esc(o.codigo)+'<br>'+esc(fecha)+'</span><span class="bulto">BULTO '+i+'/'+n+'</span></span></div>'+
+  if((c.destino==="Lima"&&c.entrega==="Delivery")||domProv) medio+='<p class="doc" style="margin-top:.6mm">'+esc(c.direccion||"")+(domProv&&c.distrito?", "+esc(c.distrito):"")+(c.referencia?'<br>Ref.: '+esc(c.referencia):'')+'</p>';
+  return '<div class="et"><div class="top"><span class="brand">'+(window.TL_LOGO_ET?'<img src="'+TL_LOGO_ET+'" alt="Transline">':'TRANSLINE')+'</span><span style="display:flex;align-items:center"><span class="code">'+esc(o.codigo)+'<br>'+esc(fecha)+'</span><span class="bulto">BULTO '+i+'/'+n+'</span></span></div>'+
     '<div class="mid"><div style="min-width:0"><p class="k">DESTINATARIO</p><p class="name">'+esc((c.nombre||"").toUpperCase())+'</p><p class="doc">'+esc(c.tipoDoc||"")+' '+esc(c.doc||"")+' · '+esc(c.comprobante||"")+'</p>'+medio+'</div>'+
     '<div><div class="qr">'+qrSVG(qrURL(o))+'</div><div class="qrt">Escanea para ver la orden</div></div></div>'+
     '<div class="dest"><b>'+esc(TLtxt.lugar(c))+'</b><span>'+esc(detalle)+'</span></div>'+
@@ -261,21 +310,24 @@ function imprimir(lista){
 }
 function renderImprimir(){
   const el=$("#lista-imp"); if(!el) return;
-  const pend=ordenes.filter(o=>o.estado==="Embalado"&&o.bultos&&!(o.t&&o.t.impreso));
+  const emb=ordenes.filter(o=>o.estado==="Embalado"&&o.bultos&&!(o.t&&o.t.impreso));
+  const pend=emb.filter(o=>o.c), esperan=emb.filter(o=>!o.c);
   const hechas=ordenes.filter(o=>o.bultos&&o.t&&o.t.impreso).slice(0,10);
   $("#imp-todas").hidden=pend.length<2; $("#imp-todas").textContent="Imprimir todas ("+pend.reduce((s,o)=>s+o.bultos,0)+" etiquetas)";
-  el.innerHTML=pend.length?"":'<p class="vacio">No hay etiquetas pendientes. Cuando almacén marque una orden como Embalado, aparecerá aquí.</p>';
-  const fila=(o,re)=>{const d=document.createElement("div");d.className="order";
-    d.innerHTML='<div class="top"><b>'+esc(o.c?o.c.nombre:"")+'</b><span>'+esc(o.codigo)+(re?' · impresa '+esc(o.t.impreso):'')+'</span></div><div class="dest-l">'+esc(lugarCorto(o))+'</div>'+
-      '<div class="acts"><button type="button" class="btn '+(re?'':'primary')+'">'+(re?"Reimprimir":"Imprimir")+' '+o.bultos+' etiqueta'+(o.bultos>1?'s':'')+'</button></div>';
-    d.querySelector("button").onclick=async()=>{ imprimir([o]); if(!re){ try{const j=await api({action:"impreso",codigo:o.codigo});reemplazar(j.orden);renderImprimir();renderLista()}catch(e){} } };
+  el.innerHTML=(pend.length||esperan.length)?"":'<p class="vacio">No hay etiquetas pendientes. Cuando almacén marque una orden como Embalado, aparecerá aquí.</p>';
+  const fila=(o,modo)=>{const d=document.createElement("div");d.className="order";
+    const re=modo==="re", espera=modo==="espera";
+    d.innerHTML='<div class="top"><b>'+esc(o.codigo)+'</b><span>'+esc(o.c?o.c.nombre:"Esperando datos del cliente")+(re?' · impresa '+esc(o.t.impreso):'')+'</span></div><div class="dest-l">'+esc(lugarCorto(o))+'</div>'+
+      '<div class="acts"><button type="button" class="btn '+(re||espera?'':'primary')+'" '+(espera?'disabled':'')+'>'+(espera?"⏳ Esperando datos del cliente":(re?"Reimprimir":"Imprimir")+' '+o.bultos+' etiqueta'+(o.bultos>1?'s':''))+'</button></div>';
+    if(!espera) d.querySelector("button").onclick=async()=>{ imprimir([o]); if(!re){ try{const j=await api({action:"impreso",codigo:o.codigo});reemplazar(j.orden);renderImprimir();renderLista()}catch(e){} } };
     return d;};
-  pend.forEach(o=>el.appendChild(fila(o,false)));
-  const el2=$("#lista-imp-hechas"); el2.innerHTML=""; $("#titulo-hechas").hidden=!hechas.length; hechas.forEach(o=>el2.appendChild(fila(o,true)));
+  pend.forEach(o=>el.appendChild(fila(o,"")));
+  esperan.forEach(o=>el.appendChild(fila(o,"espera")));
+  const el2=$("#lista-imp-hechas"); el2.innerHTML=""; $("#titulo-hechas").hidden=!hechas.length; hechas.forEach(o=>el2.appendChild(fila(o,"re")));
 }
-$("#imp-todas").onclick=async()=>{ const pend=ordenes.filter(o=>o.estado==="Embalado"&&o.bultos&&!(o.t&&o.t.impreso)); imprimir(pend);
+$("#imp-todas").onclick=async()=>{ const pend=ordenes.filter(o=>o.estado==="Embalado"&&o.bultos&&o.c&&!(o.t&&o.t.impreso)); imprimir(pend);
   for(const o of pend){ try{const j=await api({action:"impreso",codigo:o.codigo});reemplazar(j.orden)}catch(e){} } renderImprimir(); renderLista(); };
-$("#imp-prueba").onclick=()=>imprimir([{codigo:"TL-PRUEBA",fecha:"01/01/2026 00:00",bultos:1,embalaje:"Con embalaje",
+$("#imp-prueba").onclick=()=>imprimir([{codigo:"OD-0000",fecha:"01/01/2026 00:00",bultos:1,embalaje:"Con embalaje",
   c:{comprobante:"Factura",nombre:"Empresa de prueba SAC",tipoDoc:"RUC",doc:"20601457785",tel:"999999999",destino:"Provincia",ciudad:"Huancayo",agencia:"Shalom",sede:"Sede El Tambo",atencion:{nombre:"Persona de prueba",doc:"12345678",tel:"999999999"}}}]);
 
 /* ---------- pestañas y sesión ---------- */
@@ -293,7 +345,7 @@ function aplicarRol(){
   $("#t-ordenes").firstChild.textContent=rol("vendedor")?"Mis órdenes":"Órdenes";
   if(rol("almacen")) $("#f-estado").value="activas";
 }
-function salir(){ PIN=""; U=null; LS.set("tl_pin2",""); LS.set("tl_usuario",null); LS.set("tl_estados",null); estadosPrev=null; ordenes=[]; LS.set("tl_ordenes2",[]); nuevos=new Set(); LS.set("tl_nuevos",[]); renderLista(); pedirPin(); }
+function salir(){ PIN=""; U=null; LS.set("tl_pin2",""); LS.set("tl_usuario",null); LS.set("tl_estados3",null); estadosPrev=null; ordenes=[]; LS.set("tl_ordenes2",[]); nuevos=new Set(); LS.set("tl_nuevos",[]); renderLista(); pedirPin(); }
 $("#salir").onclick=()=>{ if(confirm("¿Cerrar sesión en este celular?")) salir(); };
 
 async function cargar(silencioso){

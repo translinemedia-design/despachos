@@ -177,3 +177,26 @@ input:focus-visible,textarea:focus-visible,button:focus-visible,select:focus-vis
 .preview-et{transform-origin:top left;border:1px solid var(--line);border-radius:6px;overflow:hidden;width:100mm;margin:10px 0}
 .order .top .nuevo-tag{color:#fff;font-size:.72rem}
 @media (max-width:440px){ .brand small{display:none} .who{font-size:.72rem} }
+/* v2.1.1: la etiqueta nunca se ensancha por textos largos y siempre imprime los fondos negros */
+.et{grid-template-columns:minmax(0,1fr);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.et *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.et>*{min-width:0}
+.et .top .brand{min-width:0}
+.et .top>span:last-child{flex:none}
+.et .mid{grid-template-columns:minmax(0,1fr) 21mm}
+.et .name,.et .doc,.et .att{overflow-wrap:anywhere}
+.et .dest b{min-width:0;flex:0 1 auto;overflow:hidden;text-overflow:ellipsis}
+.et .dest span{min-width:0;flex:1 1 0}
+.et .dest b{max-width:60%}
+.et .brand img{height:6mm;width:auto;display:block}
+.et .brand{padding:0;border:0;margin:0}
+/* v2.2: pasos de envío de mensajes */
+.paso{background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.paso.hecho{border-color:#1FA855}
+.paso-t b{display:block;font-size:1rem}
+.paso-t small{display:block;color:var(--muted);font-size:.82rem;margin:2px 0 8px}
+.paso-b{display:flex;gap:8px}
+.paso-b .btn:first-child{flex:1}
+.order .pasos{margin-top:10px}
+.order .pasos .paso{border:0;padding:0;margin:0 0 6px;background:none}
+.order .pasos .paso-b .btn{min-height:38px;padding:7px 12px;font-size:.88rem}

@@ -81,7 +81,7 @@
     }
     if(orden.c){ $("#p-aviso").hidden=false; $("#p-aviso").textContent="Ya registraste tus datos. Puedes revisarlos y corregirlos antes de que preparemos tu pedido."; }
     $("#v-form").hidden=false; $("#v-ok").hidden=true;
-    if(!form) form = FormCliente($("#form"), orden.c, { agencias: agenciasLista });
+    if(!form) form = FormCliente($("#form"), orden.c || (orden.destinoPrev ? { destino: orden.destinoPrev } : null), { agencias: agenciasLista });
   }
   $("#enviar").onclick = async ()=>{
     const c = form.validar(); if(!c){ toast("Revisa los campos marcados"); return; }
