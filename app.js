@@ -9,7 +9,13 @@ const PAGOS = ["Cancelado","Pendiente","Contraentrega","Adelanto"];
 const EXTRA_KEY = "tl_extra";
 const key = p => p.n+"|"+(p.s||"");
 
-let PIN = LS.get("tl_pin2","");
+/* Sesión compartida con el portal Transline (un solo PIN para todos los módulos) */
+const leerPortal = () => { try { return JSON.parse(localStorage.getItem("tl_portal")||"null"); } catch(e){ return null; } };
+let PIN = (leerPortal()||{}).pin || "";
+if(PIN && LS.get("tl_ultimo_pin","")!==PIN){            // otra persona entró en este equipo: se limpia lo guardado
+  ["tl_usuario","tl_ordenes2","tl_estados3","tl_nuevos"].forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});
+  LS.set("tl_ultimo_pin",PIN);
+}
 let U = LS.get("tl_usuario",null);           // {nombre, rol}
 let ordenes = LS.get("tl_ordenes2",[]);
 let catalogo = (LS.get("tl_catalogo",null)||CAT_BASE).concat(LS.get(EXTRA_KEY,[]));
@@ -172,7 +178,7 @@ async function crearOrden(){
     const j=await api({action:"crear",orden}); const o=j.orden; idPendiente=null;
     reemplazar(o); estadosPrev&&(estadosPrev[o.codigo]=firma(o)); LS.set("tl_estados3",estadosPrev); renderLista();
     limpiarNueva(); mostrarCreada(o);
-  }catch(e){ toast(e.message==="pin"?"Tu PIN ya no es válido":"No se pudo crear la orden. Revisa tu conexión e inténtalo de nuevo."); if(e.message==="pin") salir(); }
+  }catch(e){ toast(e.message==="pin"?"Tu PIN ya no es válido":"No se pudo crear la orden. Revisa tu conexión e inténtalo de nuevo."); if(e.message==="pin"){ PIN=""; pedirPin("Tu PIN ya no es válido. Ingrésalo de nuevo."); } }
   b.textContent="Crear orden"; sync();
 }
 $("#enviar").onclick=crearOrden;
@@ -281,33 +287,7 @@ $("#f-estado").onchange=renderLista; $("#f-buscar").addEventListener("input",ren
 $("#actualizar").onclick=()=>cargar();
 
 /* ---------- etiquetas ---------- */
-function qrSVG(text){
-  try{ const q=qrcode(0,"M"); q.addData(text); q.make(); return q.createSvgTag({cellSize:2,margin:0,scalable:true}); }
-  catch(e){ return '<div style="font-size:2.4mm;border:.3mm solid #000;height:21mm;display:flex;align-items:center;justify-content:center;text-align:center">'+esc(text.split("#o=")[1]||"")+'</div>'; }
-}
-function etiqueta(o,i,n){
-  const c=o.c||{}, a=c.atencion;
-  const fecha=(o.fecha||"").split(" ")[0];
-  let detalle="";
-  const domProv=c.destino==="Provincia"&&c.entrega==="Entrega a domicilio";
-  if(domProv) detalle=(c.agencia||"")+" · Entrega a domicilio";
-  else if(c.destino==="Provincia") detalle="Agencia "+(c.agencia||"")+(c.sede?" · "+c.sede:"");
-  else if(c.entrega==="Recojo en tienda") detalle="Recoge en tienda";
-  else detalle="Entrega: Delivery";
-  let medio="";
-  if(a&&a.nombre) medio='<div class="att"><b>ATENCIÓN A:</b> '+esc(a.nombre)+'<br>DNI '+esc(a.doc)+' · Tel. '+esc(a.tel)+'</div>';
-  else medio='<p class="doc" style="margin-top:.8mm">Tel. '+esc(c.tel||"")+'</p>';
-  if((c.destino==="Lima"&&c.entrega==="Delivery")||domProv) medio+='<p class="doc" style="margin-top:.6mm">'+esc(c.direccion||"")+(domProv&&c.distrito?", "+esc(c.distrito):"")+(c.referencia?'<br>Ref.: '+esc(c.referencia):'')+'</p>';
-  return '<div class="et"><div class="top"><span class="brand">'+(window.TL_LOGO_ET?'<img src="'+TL_LOGO_ET+'" alt="Transline">':'TRANSLINE')+'</span><span style="display:flex;align-items:center"><span class="code">'+esc(o.codigo)+'<br>'+esc(fecha)+'</span><span class="bulto">BULTO '+i+'/'+n+'</span></span></div>'+
-    '<div class="mid"><div style="min-width:0"><p class="k">DESTINATARIO</p><p class="name">'+esc((c.nombre||"").toUpperCase())+'</p><p class="doc">'+esc(c.tipoDoc||"")+' '+esc(c.doc||"")+' · '+esc(c.comprobante||"")+'</p>'+medio+'</div>'+
-    '<div><div class="qr">'+qrSVG(qrURL(o))+'</div><div class="qrt">Escanea para ver la orden</div></div></div>'+
-    '<div class="dest"><b>'+esc(TLtxt.lugar(c))+'</b><span>'+esc(detalle)+'</span></div>'+
-    '<div class="foot"><span>Remitente: '+esc(TL.REMITENTE)+' · RUC '+esc(TL.RUC_REMITENTE)+'</span><span>'+esc((o.embalaje||"").toUpperCase())+'</span></div></div>';
-}
-function imprimir(lista){
-  $("#print-area").innerHTML=lista.map(o=>{let h="";const n=Math.max(1,o.bultos||1);for(let i=1;i<=n;i++)h+=etiqueta(o,i,n);return h}).join("");
-  setTimeout(()=>window.print(),80);
-}
+function imprimir(lista){ TLEtiq.imprimir(lista); }
 function renderImprimir(){
   const el=$("#lista-imp"); if(!el) return;
   const emb=ordenes.filter(o=>o.estado==="Embalado"&&o.bultos&&!(o.t&&o.t.impreso));
@@ -345,14 +325,14 @@ function aplicarRol(){
   $("#t-ordenes").firstChild.textContent=rol("vendedor")?"Mis órdenes":"Órdenes";
   if(rol("almacen")) $("#f-estado").value="activas";
 }
-function salir(){ PIN=""; U=null; LS.set("tl_pin2",""); LS.set("tl_usuario",null); LS.set("tl_estados3",null); estadosPrev=null; ordenes=[]; LS.set("tl_ordenes2",[]); nuevos=new Set(); LS.set("tl_nuevos",[]); renderLista(); pedirPin(); }
-$("#salir").onclick=()=>{ if(confirm("¿Cerrar sesión en este celular?")) salir(); };
+function salir(){ PIN=""; U=null; try{localStorage.removeItem("tl_portal")}catch(e){} LS.set("tl_usuario",null); LS.set("tl_estados3",null); estadosPrev=null; ordenes=[]; LS.set("tl_ordenes2",[]); nuevos=new Set(); LS.set("tl_nuevos",[]); renderLista(); pedirPin(); }
+$("#salir").onclick=()=>{ location.href=TL.PORTAL_URL||"../transline/"; };
 
 async function cargar(silencioso){
   if(!PIN) return;
   try{
     const r=await fetch(TL.API_URL+"?action=list&pin="+encodeURIComponent(PIN)); const j=await r.json();
-    if(!j.ok){ if(j.error==="pin"){ salir(); $("#pin-err").textContent="Tu PIN ya no está activo. Pide uno nuevo."; } return; }
+    if(!j.ok){ if(j.error==="pin"){ PIN=""; U=null; ordenes=[]; renderLista(); pedirPin("Tu usuario no tiene acceso a Despachos o tu PIN cambió. Ingresa tu PIN o vuelve al inicio."); } return; }
     U=j.usuario; LS.set("tl_usuario",U); aplicarRol();
     ordenes=j.ordenes; LS.set("tl_ordenes2",ordenes);
     if(j.productos&&j.productos.length){ catalogo=j.productos.concat(LS.get(EXTRA_KEY,[])); LS.set("tl_catalogo",j.productos); renderCats(); renderCat(); }
@@ -366,7 +346,7 @@ async function validarPin(){
   const v=$("#pin").value.trim(); if(!v) return; prepararAudio();
   $("#pin-ok").disabled=true; $("#pin-err").textContent="Verificando…";
   try{ const r=await fetch(TL.API_URL+"?action=list&pin="+encodeURIComponent(v)); const j=await r.json();
-    if(j.ok){ PIN=v; LS.set("tl_pin2",v); $("#gate").hidden=true; $("#pin").value=""; estadosPrev=null; await cargar(); tab(rol("almacen")?"ordenes":"nueva"); irAHash(); }
+    if(j.ok){ PIN=v; LS.set("tl_ultimo_pin",v); const p=leerPortal(); if(!p||p.pin!==v){ try{localStorage.setItem("tl_portal",JSON.stringify({pin:v,nombre:j.usuario?j.usuario.nombre:""}))}catch(e){} } $("#gate").hidden=true; $("#pin").value=""; estadosPrev=null; await cargar(); tab(rol("almacen")?"ordenes":"nueva"); irAHash(); }
     else $("#pin-err").textContent="PIN incorrecto";
   }catch(e){ $("#pin-err").textContent="Sin conexión. Revisa tu internet."; }
   $("#pin-ok").disabled=false;

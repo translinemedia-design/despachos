@@ -200,3 +200,11 @@ input:focus-visible,textarea:focus-visible,button:focus-visible,select:focus-vis
 .order .pasos{margin-top:10px}
 .order .pasos .paso{border:0;padding:0;margin:0 0 6px;background:none}
 .order .pasos .paso-b .btn{min-height:38px;padding:7px 12px;font-size:.88rem}
+/* v2.5: palabra DESPACHO y franja de destino en dos líneas (la sede se lee completa) */
+.et .top{gap:2mm}
+.et .tipo-et{border:.45mm solid #000;font-weight:700;font-size:3mm;letter-spacing:.3mm;padding:.5mm 1.6mm;border-radius:.6mm;margin-right:auto;margin-left:1mm;white-space:nowrap}
+.et .dest{flex-direction:column;align-items:flex-start;gap:.3mm;padding:.8mm 2mm 1mm}
+.et .dest b{max-width:100%;flex:none}
+.et .dest span{flex:none;max-width:100%;white-space:normal;text-align:left;font-size:2.8mm;line-height:1.2;
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.gate .volver-portal{display:inline-block;margin-top:18px;color:#A9D8E8;font-size:.9rem}
