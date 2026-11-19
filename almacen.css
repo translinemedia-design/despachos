@@ -58,3 +58,12 @@ body.alm{font-size:18px;background:var(--paper)}
 .alm-ayuda{color:var(--muted);margin:0 0 16px;font-size:.95rem}
 .alm-aviso{background:#FFF8E5;border:1.5px solid #F2C14E;color:#5C4200;border-radius:12px;padding:16px 18px;margin-bottom:16px;font-size:1.05rem}
 .alm .toast{font-size:1.05rem;bottom:28px}
+.alm-devolver{margin-bottom:22px}
+.alm-devolver h2{font-size:1.25rem;margin:0 0 12px;color:#9B1C1C}
+.cfg-box{margin-top:10px;border:2px solid #B7791F;background:#FFF8E5;border-radius:10px;padding:10px 12px;font-size:.95rem}
+.cfg-box.hecho{border-color:#1E7F55;background:#E8F6EE}
+.cfg-box b{display:block;margin-bottom:4px}
+.cfg-box table{border-collapse:collapse;margin-top:6px;font-size:.95rem}
+.cfg-box td,.cfg-box th{border:1px solid rgba(0,0,0,.15);padding:3px 9px;text-align:center}
+.pedido .bultos-box{margin-top:12px}
+.pedido .acc .bultos-box{flex-basis:100%;margin-top:0}

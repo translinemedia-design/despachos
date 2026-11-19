@@ -31,11 +31,13 @@
     <button role="tab" data-tab="nueva" aria-selected="true">Nueva orden</button>
     <button role="tab" data-tab="ordenes" id="t-ordenes" aria-selected="false">Órdenes<span class="count" id="pend">0</span></button>
     <button role="tab" data-tab="imprimir" aria-selected="false" hidden>Por imprimir<span class="count" id="pend-imp" hidden>0</span></button>
+    <button role="tab" data-tab="solicitudes" aria-selected="false" hidden>Solicitudes<span class="count" id="n-sol" hidden>0</span></button>
   </nav>
 </header>
 
 <main>
 <section class="view" id="v-nueva">
+  <div class="banner-corr" id="banner-corr" hidden><b>✏️ Corrigiendo <span id="corr-cod"></span></b><span id="corr-nota"></span><button type="button" class="btn" id="corr-cancelar">Cancelar</button></div>
   <fieldset>
     <legend>Productos a alistar</legend>
     <input type="search" id="buscar" placeholder="Buscar por nombre o SKU">
@@ -43,6 +45,23 @@
     <div class="cat" id="catalogo"></div>
     <div class="addrow" id="addrow" hidden><button type="button" class="btn sun" id="agregar-nuevo">Agregar al catálogo</button></div>
     <ul class="lines" id="lineas"></ul>
+  </fieldset>
+  <fieldset id="box-config" hidden>
+    <legend>⚙️ Configuración de luminarias</legend>
+    <p class="nota" style="margin-top:0">Este pedido tiene luminarias de la línea profesional. Indica cómo deben configurarse los drivers; el almacén no podrá alistarlo hasta confirmar la configuración.</p>
+    <label class="f" for="cfg-lugar">Lugar de instalación</label>
+    <input type="text" id="cfg-lugar" placeholder="Ej.: Parque central de Huancayo, vía de acceso">
+    <div class="row2">
+      <div><label class="f" for="cfg-altura">Altura de instalación (m)</label><input type="tel" inputmode="decimal" id="cfg-altura" placeholder="Ej.: 8"></div>
+      <div><label class="f" for="cfg-resp">Responsable</label><input type="text" id="cfg-resp" placeholder="Nombre de quien recibe o instala"></div>
+    </div>
+    <label class="f">Configuración por tiempos (5 niveles)</label>
+    <div class="cfg-niv" id="cfg-niveles">
+      <span></span><span>Cantidad (horas)</span><span>Porcentaje (%)</span>
+      <span>Nivel 1</span><input class="cfg-h" type="tel" inputmode="decimal" placeholder="Ej.: 1"><input class="cfg-p" type="tel" inputmode="numeric" placeholder="Ej.: 100"><span>Nivel 2</span><input class="cfg-h" type="tel" inputmode="decimal" placeholder="Ej.: 2"><input class="cfg-p" type="tel" inputmode="numeric" placeholder="Ej.: 80"><span>Nivel 3</span><input class="cfg-h" type="tel" inputmode="decimal" placeholder="Ej.: 3"><input class="cfg-p" type="tel" inputmode="numeric" placeholder="Ej.: 60"><span>Nivel 4</span><input class="cfg-h" type="tel" inputmode="decimal" placeholder="Ej.: 6"><input class="cfg-p" type="tel" inputmode="numeric" placeholder="Ej.: 25"><span>Nivel 5</span><input class="cfg-h" type="tel" inputmode="decimal" placeholder="Hasta el amanecer"><input class="cfg-p" type="tel" inputmode="numeric" placeholder="Ej.: 20">
+    </div>
+    <div class="cfg-tot" id="cfg-total">Total: 0 h</div>
+    <div class="hint">El nivel 5 puede quedar sin cantidad: significa que dura hasta el amanecer.</div>
   </fieldset>
   <fieldset id="box-destino">
     <legend>Destino</legend>
@@ -65,7 +84,7 @@
     <label class="f" for="obs">Observaciones</label>
     <textarea id="obs" placeholder="Ej.: entregar antes de las 4 p. m., frágil…"></textarea>
   </fieldset>
-  <fieldset>
+  <fieldset id="box-cliente">
     <legend>Datos del cliente</legend>
     <div class="seg" id="quien">
       <button type="button" data-v="El cliente (link)">Los llena el cliente</button>
@@ -87,7 +106,7 @@
     <select id="f-estado" aria-label="Filtrar por estado">
       <option value="activas">Sin despachar</option>
       <option value="">Todas</option>
-      <option value="sindatos">Sin datos del cliente</option><option>Pendiente</option><option>Alistado</option><option>Embalado</option><option>Despachado</option>
+      <option value="sindatos">Sin datos del cliente</option><option value="anuladas">Anuladas</option><option>Pendiente</option><option>Alistado</option><option>Embalado</option><option>Despachado</option>
     </select>
     <button class="btn" id="actualizar" type="button">Actualizar</button>
   </div>
@@ -100,6 +119,11 @@
   <div id="lista-imp"></div>
   <h3 id="titulo-hechas" hidden style="font-size:1rem;margin:22px 0 10px">Impresas recientemente</h3>
   <div id="lista-imp-hechas"></div>
+</section>
+
+<section class="view" id="v-solicitudes" hidden>
+  <p class="nota" style="margin-top:0">Pedidos que un vendedor pidió anular o corregir después de que el almacén empezó a trabajarlos. Nadie puede aprobar su propia solicitud.</p>
+  <div id="lista-sol"></div>
 </section>
 
 <section class="view" id="v-creada" hidden>
@@ -144,6 +168,7 @@
 <script>const CAT_BASE = [{"s":"CET-103-50W","n":"Reflector Solar 50W aplique","c":"Reflector"},{"s":"BL-911-200W","n":"Reflector Portátil Solar 200W Celeste","c":"Reflector"},{"s":"TR-105A-300W","n":"Reflector Solar 300W","c":"Reflector"},{"s":"TR-105A-500W","n":"Reflector Solar 500W","c":"Reflector"},{"s":"TR-105A-1200W","n":"Reflector Solar 1200W","c":"Reflector"},{"s":"TR-105A-1500W","n":"Reflector Solar 1500W","c":"Reflector"},{"s":"TR-296B-1200W","n":"Reflector Solar 1200W - 2027","c":"Reflector"},{"s":"TR-296B-1500W","n":"Reflector Solar 1500W - 2027","c":"Reflector"},{"s":"TR-106D-2500W","n":"Reflector Solar 2500W","c":"Reflector"},{"s":"TR-230-100W","n":"Pastoral Solar 100W","c":"Pastoral"},{"s":"TR-230-300W","n":"Pastoral Solar 300W","c":"Pastoral"},{"s":"TR-30TR-1000W","n":"Pastoral Solar Triple Cara 1000W","c":"Pastoral"},{"s":"TER-40TR-1200W","n":"Pastoral Solar Triple Cara 1200W","c":"Pastoral"},{"s":"TR-190-200W","n":"Pastoral Solar Integrado Premium 200W","c":"Pastoral"},{"s":"TR-168-400W","n":"Pastoral Panel Solar Externo Premium 400W","c":"Pastoral"},{"s":"TR-113-120W 6500K","n":"Farola Isla Solar Premium 120W","c":"Farola"},{"s":"TR-193-1500W","n":"Pastoral Solar Integrado Premium 1500W","c":"Pastoral"},{"s":"TR-193-1800W","n":"Pastoral Solar Integrado Premium 1800W","c":"Pastoral"},{"s":"TR-196-400W","n":"Pastoral Solar Integrado Premium 400W","c":"Pastoral"},{"s":"TR-SLV2-60W","n":"Luminaria Solar Integrada Profesional 60W","c":"Profesional"},{"s":"TR-194-120W","n":"Luminaria Solar Integrada Profesional 120W","c":"Profesional"},{"s":"TR-SLV-200W","n":"Luminaria Solar Integrada Profesional TITAN 200W","c":"Profesional"},{"s":"TR-BEX-600W","n":"Luminaria Solar Profesional Batería Externa 600W","c":"Profesional"},{"s":"TR-198-120","n":"Luminaria Solar Integrada Profesional ATLAS 120W","c":"Profesional"},{"s":"TR-193TR-150W","n":"Luminaria Solar Integrada Profesional OLYMPO 150W","c":"Profesional"},{"s":"TR-193TR-200W","n":"Luminaria Solar Integrada Profesional OLYMPO MAX 200W","c":"Profesional"},{"s":"TR-197-60W","n":"Luminaria Solar Integrada Profesional JET 60W","c":"Profesional"},{"s":"TR-197-80W","n":"Luminaria Solar Integrada Profesional JET 80W","c":"Profesional"},{"s":"TR-197-100W","n":"Luminaria Solar Integrada Profesional JET 100W","c":"Profesional"},{"s":"TR-214-50W","n":"Farola UFO 50W Profesional","c":"Farola"},{"s":"","n":"Estación de Energía Portátil 300W","c":"Energía portátil"},{"s":"","n":"Estación de Energía Portátil 1200W","c":"Energía portátil"},{"s":"","n":"Estación de Energía Portátil 2500W","c":"Energía portátil"},{"s":"","n":"USP Kit Solar Energía Portátil 500W","c":"Energía portátil"},{"s":"","n":"Panel solar plegable 50W","c":"Energía portátil"},{"s":"","n":"Panel solar plegable 100W","c":"Energía portátil"},{"s":"","n":"Panel solar plegable 400W","c":"Energía portátil"},{"s":"","n":"Power Bank Solar 4000 mAh","c":"Energía portátil"},{"s":"","n":"Brazo Metálico L para UFO","c":"Accesorios"},{"s":"","n":"Kit para UFO Poste 2.5 metros con base de policarbonato","c":"Accesorios"},{"s":"","n":"KIT UFO SOLAR","c":"Combos"}];</script>
 <script src="logo-etiqueta.js"></script>
 <script src="etiquetas.js"></script>
+<script src="ui.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -73,6 +73,7 @@
     $("#p-codigo").textContent = orden.codigo;
     $("#p-info").textContent = orden.fecha + (orden.vendedor ? " · Te atiende: " + orden.vendedor : "");
     $("#p-prods").innerHTML = orden.productos.map(x=>'<li><b>'+x.q+' ×</b><span>'+esc(x.p)+(x.s?'<small>'+esc(x.s)+'</small>':'')+'</span></li>').join("");
+    if(orden.anulada){ error("Este pedido fue anulado. Si tienes dudas, escribe a tu vendedor."); return; }
     if(!orden.editable){
       if(orden.c){ $("#v-form").hidden=true; $("#v-ok").hidden=false; $("#editar").hidden=true;
         $("#ok-txt").textContent = orden.vencido ? "Este enlace ya venció. Si necesitas cambiar algo, escribe a tu vendedor." : "Tu pedido ya está en preparación. Si necesitas cambiar algo, escribe a tu vendedor."; return; }

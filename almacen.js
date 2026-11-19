@@ -43,21 +43,34 @@ function tarjeta(o,clase){
     '<div class="chips">'+(o.embalaje?'<span class="chip emb">'+esc(o.embalaje.toUpperCase())+'</span>':'')+
       (o.pago==="Contraentrega"?'<span class="chip cobrar">CONTRAENTREGA · COBRAR</span>':'')+
       (!o.c?'<span class="chip espera">Cliente aún no envía sus datos</span>':'')+
+      (o.corregida?'<span class="chip cobrar">⚠️ PEDIDO CORREGIDO: REVISA LOS PRODUCTOS</span>':'')+
+      (bloqueada(o)?'<span class="chip cobrar">⏳ ESPERA: SE PIDIÓ '+(o.sol.tipo==="anulacion"?"ANULAR":"CORREGIR")+' ESTE PEDIDO</span>':'')+
       (o.bultos&&o.estado!=="Pendiente"&&o.estado!=="Alistado"?'<span class="chip">'+o.bultos+' bulto'+(o.bultos>1?'s':'')+'</span>':'')+'</div>'+
     '<ul class="prod">'+o.productos.map(x=>'<li><span class="q">'+x.q+' ×</span><span>'+esc(x.p)+(x.s?'<small>'+esc(x.s)+'</small>':'')+'</span></li>').join("")+'</ul>'+
     '<div class="total">'+total+' producto'+(total===1?'':'s')+' en total</div>'+
-    (o.obs?'<div class="obs">📝 '+esc(o.obs)+'</div>':'');
+    (o.obs?'<div class="obs">📝 '+esc(o.obs)+'</div>':'')+
+    (o.config?'<div class="cfg-box'+(o.config.hecho?' hecho':'')+'"><b>⚙️ Configuración de drivers '+(o.config.hecho?'✓ hecha por '+esc(o.config.hechoPor):'pendiente')+'</b>'+
+      '<button type="button" class="alm-btn sec chico ver-cfg" style="margin:6px 0 0">Ver configuración</button></div>':'');
 }
+const bloqueada=o=>!!(o.sol&&o.sol.estado==="Solicitada");
 
 /* ---------- pintar ---------- */
 function pintar(){
+  const devolver=ordenes.filter(o=>o.estado==="Anulada"&&o.devolverEstante);
   const nuevos=ordenes.filter(o=>o.estado==="Pendiente");
   const alistados=ordenes.filter(o=>o.estado==="Alistado");
   const emb=ordenes.filter(o=>o.estado==="Embalado");
   const hoy=ordenes.filter(o=>o.estado==="Despachado"&&o.t&&String(o.t.Despachado||"").startsWith(hoyTxt()));
   const porImp=emb.filter(o=>o.c&&!(o.t&&o.t.impreso)).length;
   const setN=(id,n)=>{const e=$(id);e.textContent=n;e.classList.toggle("cero",!n)};
-  setN("#n-alistar",nuevos.length+alistados.length); setN("#n-imprimir",emb.length); $("#n-hoy").textContent=hoy.length;
+  setN("#n-alistar",nuevos.length+alistados.length+devolver.length);
+  const dv=$("#devolver"); dv.innerHTML=""; dv.hidden=!devolver.length;
+  if(devolver.length) dv.innerHTML='<h2>🔙 Pedidos anulados: devolver los productos al estante</h2>';
+  devolver.forEach(o=>{ const d=document.createElement("div"); d.className="pedido espera";
+    d.innerHTML=tarjeta(o)+'<div class="obs">Motivo: '+esc(o.sol?o.sol.motivo:"")+'</div><div class="acc"><button type="button" class="alm-btn ancho">✓ Ya devolví los productos al estante</button></div>';
+    d.querySelector(".alm-btn").onclick=async e=>{ const r=await TLConfirm({titulo:"¿Devolviste todos los productos de "+o.codigo+" al estante?",si:"Sí, ya están",no:"Todavía no"}); if(!r.ok) return;
+      e.target.disabled=true; try{ const j=await api({action:"devuelto",codigo:o.codigo}); reemplazar(j.orden); pintar(); toast("✓ "+o.codigo+": productos devueltos"); }catch(err){ e.target.disabled=false; toast(msg(err)); } };
+    verCfg(d,o); dv.appendChild(d); }); setN("#n-imprimir",emb.length); $("#n-hoy").textContent=hoy.length;
   document.title=(nuevos.length?"("+nuevos.length+") ":"")+"Alistar pedidos · Transline";
 
   const colN=$("#col-nuevos"), colA=$("#col-alistados"); colN.innerHTML=""; colA.innerHTML="";
@@ -74,24 +87,33 @@ function pintar(){
   if(!hoy.length) lh.innerHTML='<div class="alm-vacio">Todavía no se despacha nada hoy.</div>';
   hoy.forEach(o=>{const d=document.createElement("div");d.className="pedido listo";
     d.innerHTML=tarjeta(o)+'<div class="acc"><span class="quien">Salió: '+esc(String(o.t.Despachado).split(" · ")[0])+'</span><button type="button" class="deshacer">Reimprimir etiquetas</button></div>';
-    d.querySelector(".deshacer").onclick=()=>TLEtiq.imprimir([o]); lh.appendChild(d);});
+    d.querySelector(".deshacer").onclick=()=>TLEtiq.imprimir([o]); verCfg(d,o); lh.appendChild(d);});
 }
 function marcarNuevo(d,o){ if(previo&&!previo[o.codigo]) d.classList.add("nuevo-flash"); }
+function verCfg(d,o){ const b=d.querySelector(".ver-cfg"); if(b) b.onclick=()=>TLConfirm({titulo:"⚙️ Configuración · "+o.codigo,html:TLConfigHTML(o.config),si:"Cerrar",unBoton:true}); }
 function cardAlistar(o){
   const d=document.createElement("div"); d.className="pedido"; marcarNuevo(d,o);
-  d.innerHTML=tarjeta(o)+'<div class="acc"><button type="button" class="alm-btn ancho">✓ Ya está alistado</button></div>';
-  d.querySelector(".alm-btn").onclick=e=>estado(o,"Alistado",null,e.target);
+  const falta=o.config&&!o.config.hecho;
+  d.innerHTML=tarjeta(o)+'<div class="acc">'+(falta?'<button type="button" class="alm-btn azul ancho" data-a="cfg">⚙️ Confirmar configuración</button>':'')+
+    '<button type="button" class="alm-btn ancho" data-a="ok" '+(falta||bloqueada(o)?'disabled':'')+'>✓ Ya está alistado</button></div>'+
+    (falta?'<div class="quien">Primero confirma la configuración de las luminarias.</div>':'');
+  d.querySelector('[data-a="ok"]').onclick=e=>estado(o,"Alistado",null,e.target);
+  const bc=d.querySelector('[data-a="cfg"]'); if(bc) bc.onclick=async e=>{
+    const r=await TLConfirm({titulo:"¿Se realizó la configuración?",html:TLConfigHTML(o.config),si:"Sí, ya está",no:"Todavía no"}); if(!r.ok) return;
+    e.target.disabled=true; try{ const j=await api({action:"configurado",codigo:o.codigo}); reemplazar(j.orden); pintar(); toast("⚙️ Configuración registrada"); }catch(err){ e.target.disabled=false; toast(msg(err)); } };
+  verCfg(d,o);
   return d;
 }
 function cardEmbalar(o){
   const d=document.createElement("div"); d.className="pedido alistado";
   d.innerHTML=tarjeta(o)+'<div class="bultos-box"><label>¿Cuántos bultos?</label><div class="stepper"><button type="button" aria-label="Uno menos">−</button><input type="tel" inputmode="numeric" value="'+(o.bultos||1)+'" aria-label="Bultos"><button type="button" aria-label="Uno más">+</button></div>'+
-    '<button type="button" class="alm-btn azul ancho">📦 Ya está embalado</button></div>'+
+    '<button type="button" class="alm-btn azul ancho" '+(bloqueada(o)?'disabled':'')+'>📦 Ya está embalado</button></div>'+
     '<div class="acc"><button type="button" class="deshacer">↩ Volver a "Nuevos"</button></div>';
   const inp=d.querySelector(".stepper input"), [menos,mas]=d.querySelectorAll(".stepper button");
   menos.onclick=()=>{inp.value=Math.max(1,(parseInt(inp.value,10)||1)-1)}; mas.onclick=()=>{inp.value=Math.min(99,(parseInt(inp.value,10)||1)+1)};
   d.querySelector(".alm-btn").onclick=e=>{const n=parseInt(inp.value,10); if(!(n>=1&&n<=99)){toast("Escribe cuántos bultos son (1 a 99)");return} estado(o,"Embalado",n,e.target)};
   d.querySelector(".deshacer").onclick=e=>estado(o,"Pendiente",null,e.target);
+  verCfg(d,o);
   return d;
 }
 function cardImprimir(o){
@@ -99,23 +121,33 @@ function cardImprimir(o){
   d.className="pedido "+(o.c?(impresa?"listo":""):"espera");
   let acc;
   if(!o.c) acc='<button type="button" class="alm-btn sec ancho" disabled>⏳ Esperando los datos del cliente</button>';
-  else if(!impresa) acc='<button type="button" class="alm-btn azul ancho" data-a="imp">🖨️ Imprimir '+o.bultos+' etiqueta'+(o.bultos>1?'s':'')+'</button>';
+  else if(!impresa) acc='<div class="bultos-box"><label>Etiquetas de flechas</label><div class="stepper"><button type="button" aria-label="Una menos">−</button><input type="tel" inputmode="numeric" value="'+(o.flechas||o.bultos*2)+'" aria-label="Flechas"><button type="button" aria-label="Una más">+</button></div></div>'+
+    '<button type="button" class="alm-btn azul ancho" data-a="imp" '+(bloqueada(o)?'disabled':'')+'>🖨️ Imprimir '+o.bultos+' etiqueta'+(o.bultos>1?'s':'')+' + flechas</button>';
   else acc='<button type="button" class="alm-btn ancho" data-a="desp">🚚 Ya salió (despachado)</button><button type="button" class="alm-btn sec" data-a="re">Reimprimir</button>';
   d.innerHTML=tarjeta(o)+'<div class="acc">'+acc+'</div>'+(o.estado==="Embalado"&&!impresa?'<div class="acc"><button type="button" class="deshacer" data-a="atras">↩ Volver a "Alistados"</button></div>':'');
   const on=(a,fn)=>{const b=d.querySelector('[data-a="'+a+'"]'); if(b) b.onclick=fn;};
-  on("imp",async e=>{ TLEtiq.imprimir([o]); e.target.disabled=true;
+  const fl=d.querySelector(".stepper input");
+  if(fl){ const [m,p]=d.querySelectorAll(".stepper button"); m.onclick=()=>{fl.value=Math.max(0,(parseInt(fl.value,10)||0)-1)}; p.onclick=()=>{fl.value=Math.min(99,(parseInt(fl.value,10)||0)+1)}; }
+  on("imp",async e=>{ TLEtiq.imprimir([Object.assign({},o,{_flechas:Math.max(0,parseInt(fl.value,10)||0)})]); e.target.disabled=true;
     try{ const j=await api({action:"impreso",codigo:o.codigo}); reemplazar(j.orden); pintar(); }catch(err){ toast("Se imprimió, pero no se pudo guardar. Revisa el internet."); e.target.disabled=false; } });
   on("re",()=>TLEtiq.imprimir([o]));
   on("desp",e=>estado(o,"Despachado",null,e.target));
   on("atras",e=>estado(o,"Alistado",null,e.target));
+  verCfg(d,o);
   return d;
 }
+const MSGS={permiso:"Tu usuario no puede hacer esto.",sin_datos:"Falta que el cliente envíe sus datos.",config:"Primero confirma la configuración.",solicitud:"Espera: se pidió anular o corregir este pedido.",anulada:"Este pedido fue anulado."};
+const msg=e=>MSGS[e.message]||"No se pudo guardar. Revisa el internet e intenta de nuevo.";
 function reemplazar(o){ ordenes=ordenes.map(x=>x.codigo===o.codigo?o:x); }
+const TEXTOS={Alistado:"¿Ya está alistado "+"{c}?",Embalado:"¿Ya está embalado {c}?",Despachado:"¿{c} ya salió del almacén?",Pendiente:"¿Volver {c} a Nuevos?",Alistadox:"¿Volver {c} a Alistados?"};
 async function estado(o,est,bultos,btn){
+  const vuelta=(est==="Alistado"&&o.estado==="Embalado");
+  const r=await TLConfirm({titulo:(TEXTOS[vuelta?"Alistadox":est]||"¿Confirmas?").replace("{c}",o.codigo),texto:est==="Embalado"?bultos+" bulto"+(bultos>1?"s":""):"",si:"Sí",no:"No"});
+  if(!r.ok) return;
   if(btn) btn.disabled=true;
   try{ const j=await api({action:"estado",codigo:o.codigo,estado:est,bultos}); reemplazar(j.orden); recordar(); pintar();
     toast({Alistado:"✓ "+o.codigo+" alistado",Embalado:"📦 "+o.codigo+" embalado"+(j.orden.c?" · ya puedes imprimir sus etiquetas":" · las etiquetas saldrán cuando el cliente envíe sus datos"),Despachado:"🚚 "+o.codigo+" despachado",Pendiente:o.codigo+" volvió a Nuevos"}[est]||est); }
-  catch(e){ if(btn) btn.disabled=false; toast(e.message==="permiso"?"Tu usuario no puede cambiar estados.":e.message==="sin_datos"?"Falta que el cliente envíe sus datos.":"No se pudo guardar. Revisa el internet e intenta de nuevo."); }
+  catch(e){ if(btn) btn.disabled=false; toast(msg(e)); }
 }
 
 /* ---------- avisos ---------- */
@@ -136,7 +168,7 @@ async function cargar(){
     const r=await fetch(TL.API_URL+"?action=list&pin="+encodeURIComponent(PIN)); const j=await r.json();
     if(!j.ok){ sinAcceso("Tu usuario no tiene acceso a Alistar pedidos. Pide a la administración el rol «Almacén» en Despachos."); return; }
     U=j.usuario; $("#u-nombre").textContent=U.nombre;
-    if(U.rol==="vendedor"){ sinAcceso("Esta pantalla es para el almacén. Los vendedores usan Despachos desde el inicio."); return; }
+    if(!(U.roles||[U.rol]).some(r=>r==="almacen"||r==="admin")){ sinAcceso("Esta pantalla es para el almacén. Los vendedores usan Despachos desde el inicio."); return; }
     ordenes=j.ordenes; const prev=previo; detectar(); pintar(); recordar(); if(!prev) recordar();
     const h=new Date(); $("#sync").textContent="Actualizado "+String(h.getHours()).padStart(2,"0")+":"+String(h.getMinutes()).padStart(2,"0");
   }catch(e){ $("#sync").textContent="Sin conexión"; }
