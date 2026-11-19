@@ -31,7 +31,8 @@ function flecha(){ return '<div class="et-flecha">'+FLECHA_SVG+'</div>'; }
 function imprimir(lista){
   document.getElementById("print-area").innerHTML=lista.map(o=>{
     let h=""; const n=Math.max(1,o.bultos||1);
-    for(let i=1;i<=n;i++) h+=etiqueta(o,i,n);
+    const desde=Math.max(1,Math.min(n,o._desde||1)), hasta=Math.max(desde,Math.min(n,o._hasta||n));   // permite retomar, p. ej. 47 a 65
+    if(!o._sinBultos) for(let i=desde;i<=hasta;i++) h+=etiqueta(o,i,n);
     const f=o._flechas!=null?o._flechas:(o.flechas||n*2);
     for(let i=0;i<f;i++) h+=flecha();
     return h;

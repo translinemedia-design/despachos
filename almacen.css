@@ -72,3 +72,9 @@ body.alm{font-size:18px;background:var(--paper)}
 .cfg-box.hecho{color:#14532D}
 .cfg-box b{color:inherit}
 @media (prefers-color-scheme:dark){ .alm-devolver h2{color:#FF8A8A} }
+.rep-op{display:flex;align-items:center;gap:10px;font-weight:700;margin:12px 0 6px;font-size:1.05rem}
+.rep-op input{width:24px;height:24px;accent-color:#2981C4}
+.rep-rango{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:1rem}
+.rep-rango input{width:70px;text-align:center;font:inherit;font-size:1.2rem;font-weight:700;border:2px solid var(--line);border-radius:10px;min-height:46px;background:var(--surface);color:var(--ink)}
+.rep-ayuda{font-size:.88rem;color:var(--muted);margin:6px 0 0}
+.tlc .stepper{display:inline-flex}

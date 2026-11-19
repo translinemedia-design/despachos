@@ -90,7 +90,7 @@ function pintar(){
     d.innerHTML=tarjeta(o)+'<div class="acc"><span class="quien">Salió: '+esc(String(o.t.Despachado).replace(" · "," · en "))+'</span>'+
       (o.entrega?'<span class="chip" style="background:#DFF2E6;color:#1E5E3E">✓ '+esc(o.entrega.tipo)+'</span>'+o.entrega.fotos.map((f,k)=>'<a href="'+esc(f.url)+'" target="_blank" rel="noopener">Foto '+(k+1)+'</a>').join(" "):(o.ruta?'<span class="chip">En camino</span>':''))+
       '<button type="button" class="deshacer">Reimprimir etiquetas</button></div>';
-    d.querySelector(".deshacer").onclick=()=>TLEtiq.imprimir([o]); verCfg(d,o); lh.appendChild(d);});
+    d.querySelector(".deshacer").onclick=()=>reimprimir(o,false); verCfg(d,o); lh.appendChild(d);});
 }
 function marcarNuevo(d,o){ if(previo&&!previo[o.codigo]) d.classList.add("nuevo-flash"); }
 function verCfg(d,o){ const b=d.querySelector(".ver-cfg"); if(b) b.onclick=()=>TLConfirm({titulo:"⚙️ Configuración · "+o.codigo,html:TLConfigHTML(o.config),si:"Cerrar",unBoton:true}); }
@@ -126,8 +126,8 @@ function cardImprimir(o){
   if(!o.c) acc='<button type="button" class="alm-btn sec ancho" disabled>⏳ Esperando los datos del cliente</button>';
   else if(!impresa) acc='<div class="bultos-box"><label>Etiquetas de flechas</label><div class="stepper"><button type="button" aria-label="Una menos">−</button><input type="tel" inputmode="numeric" value="'+(o.flechas||o.bultos*2)+'" aria-label="Flechas"><button type="button" aria-label="Una más">+</button></div></div>'+
     '<button type="button" class="alm-btn azul ancho" data-a="imp" '+(bloqueada(o)?'disabled':'')+'>🖨️ Imprimir '+o.bultos+' etiqueta'+(o.bultos>1?'s':'')+' + flechas</button>';
-  else if(o.ruta) acc='<span class="chip" style="background:#DCEEFB;color:#14507E">🗂️ En la hoja de ruta '+esc(o.ruta)+' · falta aprobar la salida</span><button type="button" class="alm-btn sec" data-a="re">Reimprimir</button>';
-  else acc='<a class="alm-btn ancho" style="text-align:center;text-decoration:none" href="ruta.html">🗂️ Lista para la hoja de ruta</a><button type="button" class="alm-btn sec" data-a="re">Reimprimir</button>'+
+  else if(o.ruta) acc='<span class="chip" style="background:#DCEEFB;color:#14507E">🗂️ En la hoja de ruta '+esc(o.ruta)+' · falta aprobar la salida</span><button type="button" class="alm-btn sec" data-a="re">Reimprimir</button><button type="button" class="alm-btn sec" data-a="masfl">➕ Más flechas</button>';
+  else acc='<a class="alm-btn ancho" style="text-align:center;text-decoration:none" href="ruta.html">🗂️ Lista para la hoja de ruta</a><button type="button" class="alm-btn sec" data-a="re">Reimprimir</button><button type="button" class="alm-btn sec" data-a="masfl">➕ Más flechas</button>'+
     '<button type="button" class="deshacer" data-a="desp">Salió sin hoja de ruta (p. ej. recojo en tienda)</button>';
   d.innerHTML=tarjeta(o)+'<div class="acc">'+acc+'</div>'+(o.estado==="Embalado"&&!impresa?'<div class="acc"><button type="button" class="deshacer" data-a="atras">↩ Volver a "Alistados"</button></div>':'');
   const on=(a,fn)=>{const b=d.querySelector('[data-a="'+a+'"]'); if(b) b.onclick=fn;};
@@ -135,7 +135,8 @@ function cardImprimir(o){
   if(fl){ const [m,p]=d.querySelectorAll(".stepper button"); m.onclick=()=>{fl.value=Math.max(0,(parseInt(fl.value,10)||0)-1)}; p.onclick=()=>{fl.value=Math.min(99,(parseInt(fl.value,10)||0)+1)}; }
   on("imp",async e=>{ TLEtiq.imprimir([Object.assign({},o,{_flechas:Math.max(0,parseInt(fl.value,10)||0)})]); e.target.disabled=true;
     try{ const j=await api({action:"impreso",codigo:o.codigo}); reemplazar(j.orden); pintar(); }catch(err){ toast("Se imprimió, pero no se pudo guardar. Revisa el internet."); e.target.disabled=false; } });
-  on("re",()=>TLEtiq.imprimir([o]));
+  on("re",()=>reimprimir(o,false));
+  on("masfl",()=>reimprimir(o,true));
   on("desp",async e=>{ const r=await TLConfirm({titulo:"¿"+o.codigo+" salió sin hoja de ruta?",texto:"Úsalo solo cuando el pedido no viaja en el camión (por ejemplo, el cliente lo recoge en tienda).",campo:{label:"¿Por qué sale sin hoja de ruta?",placeholder:"Ej.: el cliente recogió en tienda",min:5},si:"Sí, salió"}); if(!r.ok) return;
     e.target.disabled=true; try{ const j=await api({action:"salioSinRuta",codigo:o.codigo,motivo:r.valor}); reemplazar(j.orden); pintar(); toast("🚚 "+o.codigo+" salió"); }catch(err){ e.target.disabled=false; toast(msg(err)); } });
   on("atras",e=>estado(o,"Alistado",null,e.target));
@@ -144,6 +145,29 @@ function cardImprimir(o){
 }
 const MSGS={permiso:"Tu usuario no puede hacer esto.",sin_datos:"Falta que el cliente envíe sus datos.",config:"Primero confirma la configuración.",solicitud:"Espera: se pidió anular o corregir este pedido.",anulada:"Este pedido fue anulado."};
 const msg=e=>MSGS[e.message]||"No se pudo guardar. Revisa el internet e intenta de nuevo.";
+/* Reimprimir solo una parte: rango de bultos (p. ej. del 47 al 65 si se acabó el rollo) y/o flechas extra. */
+function reimprimir(o,soloFlechas){
+  const n=Math.max(1,o.bultos||1), sug=o.flechas||n*2;
+  const st={desde:1,hasta:n,bultos:!soloFlechas,flechas:soloFlechas?2:sug};
+  const p=TLConfirm({titulo:(soloFlechas?"Imprimir más flechas · ":"Reimprimir · ")+o.codigo,
+    html:(soloFlechas?'':'<label class="rep-op"><input type="checkbox" id="rep-b" checked> Etiquetas de bulto</label>'+
+      '<div class="rep-rango" id="rep-r"><span>Desde el bulto</span><input type="tel" inputmode="numeric" id="rep-d" value="1"><span>hasta el</span><input type="tel" inputmode="numeric" id="rep-h" value="'+n+'"><span>de '+n+'</span></div>'+
+      '<p class="rep-ayuda">Si se acabó el rollo, escribe en "Desde" el número de la primera etiqueta que no salió.</p>')+
+      '<label class="rep-op">'+(soloFlechas?'¿Cuántas flechas más?':'Etiquetas de flechas')+'</label>'+
+      '<div class="stepper rep-st"><button type="button" aria-label="Una menos">−</button><input type="tel" inputmode="numeric" id="rep-f" value="'+st.flechas+'"><button type="button" aria-label="Una más">+</button></div>',
+    si:"🖨️ Imprimir",no:"Cancelar"});
+  const q=s=>document.querySelector(".tlc "+s), num=(v,def)=>{const x=parseInt(v,10); return isNaN(x)?def:x;};
+  const f=q("#rep-f"), [m,ma]=document.querySelectorAll(".tlc .rep-st button");
+  m.onclick=()=>{f.value=Math.max(0,num(f.value,0)-1); st.flechas=num(f.value,0);}; ma.onclick=()=>{f.value=Math.min(99,num(f.value,0)+1); st.flechas=num(f.value,0);};
+  f.oninput=()=>{st.flechas=Math.max(0,num(f.value,0));};
+  if(!soloFlechas){ q("#rep-b").onchange=e=>{st.bultos=e.target.checked; q("#rep-r").style.opacity=st.bultos?1:.4;};
+    q("#rep-d").oninput=e=>{st.desde=num(e.target.value,1);}; q("#rep-h").oninput=e=>{st.hasta=num(e.target.value,n);}; }
+  p.then(r=>{ if(!r.ok) return;
+    const desde=Math.max(1,Math.min(n,st.desde)), hasta=Math.max(desde,Math.min(n,st.hasta));
+    if(!st.bultos&&!st.flechas){ toast("No hay nada que imprimir"); return; }
+    TLEtiq.imprimir([Object.assign({},o,st.bultos?{_desde:desde,_hasta:hasta}:{_sinBultos:true},{_flechas:st.flechas})]);
+    toast("🖨️ "+(st.bultos?"Bultos "+desde+" a "+hasta:"")+(st.bultos&&st.flechas?" + ":"")+(st.flechas?st.flechas+" flechas":"")); });
+}
 function reemplazar(o){ ordenes=ordenes.map(x=>x.codigo===o.codigo?o:x); }
 const TEXTOS={Alistado:"¿Ya está alistado "+"{c}?",Embalado:"¿Ya está embalado {c}?",Despachado:"¿{c} ya salió del almacén?",Pendiente:"¿Volver {c} a Nuevos?",Alistadox:"¿Volver {c} a Alistados?"};
 async function estado(o,est,bultos,btn){
