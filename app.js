@@ -355,7 +355,8 @@ function renderLista(){
         (pendSol?' <span class="chip-e alerta">⏳ '+(o.sol.tipo==="anulacion"?"Anulación":"Corrección")+' por aprobar</span>':'')+
         (o.corregida?' <span class="chip-e aviso">Corregida: volver a alistar</span>':'')+
         (o.config?' <span class="chip-e '+(o.config.hecho?'':'aviso')+'">⚙️ Configuración '+(o.config.hecho?'hecha':'pendiente')+'</span>':'')+
-        (anulada&&o.devolverEstante?' <span class="chip-e alerta">Devolver al estante</span>':'')+'</div>'+
+        (anulada&&o.devolverEstante?' <span class="chip-e alerta">Devolver al estante</span>':'')+
+        (o.clave&&!anulada?' <span class="chip-e clave">🔑 Clave agencia: '+esc(o.clave)+(claveRetenida(o)?' · 🔒 retenida':'')+'</span>':'')+'</div>'+
       '<div class="dest-l">'+esc(lugarCorto(o))+(o.embalaje?' · '+esc(o.embalaje):'')+'</div>'+
       (c&&c.atencion?'<div class="dest-l">Atención a: '+esc(c.atencion.nombre)+'</div>':'')+
       '<div class="items">'+o.productos.map(x=>x.q+" × "+esc(x.p)).join(", ")+'</div>';
@@ -369,6 +370,7 @@ function renderLista(){
     if(rol("vendedor","admin") && !impresa && o.estado!=="Despachado" && !anulada) h+='<button type="button" class="btn" data-a="llenar">'+(c?"Corregir datos del cliente":"Llenar yo los datos")+'</button>';
     if(rol("vendedor","admin") && !anulada && o.estado!=="Despachado" && !pendSol && (rol("admin","almacen")||o.vendedor===U.nombre))
       h+='<button type="button" class="btn" data-a="corregir">Corregir pedido</button><button type="button" class="btn peligro" data-a="anular">Anular</button>';
+    if(claveRetenida(o)&&!anulada&&(rol("admin","supervisor")||o.vendedor===U.nombre)) h+='<button type="button" class="btn primary" data-a="saldo">💰 Saldo pagado: enviar clave</button>';
     if(o.config) h+='<button type="button" class="btn" data-a="vercfg">⚙️ Ver configuración</button>';
     if(o.hist&&o.hist.length) h+='<button type="button" class="btn" data-a="hist">Historial</button>';
     if(c&&o.token&&rol("vendedor","admin")) h+='';
@@ -383,6 +385,7 @@ function renderLista(){
     on("anular",()=>anular(o));
     on("hist",()=>{const x=d.querySelector(".hist"); x.hidden=!x.hidden;});
     on("vercfg",()=>verConfig(o));
+    on("saldo",()=>liberarClave(o));
     on("visto",()=>{visto(o.codigo);renderLista()});
     d.querySelectorAll(".states button").forEach(b=>b.onclick=()=>{
       if(b.dataset.s==="Embalado"){ d.querySelector(".bultos").hidden=false; d.querySelector(".bultos input").focus(); return; }
@@ -394,6 +397,16 @@ function renderLista(){
     on("emb-no",()=>{d.querySelector(".bultos").hidden=true});
     el.appendChild(d);
   });
+}
+const claveRetenida=o=>!!o.clave&&o.pago!=="Cancelado"&&!o.claveLiberada;
+async function liberarClave(o){
+  const r=await TLConfirm({titulo:"¿El cliente ya pagó el saldo de "+o.codigo+"?",texto:"Pago registrado: "+o.pago+". Al confirmar, se le enviará la clave "+o.clave+" para recoger en la agencia. Hazlo solo cuando el pago esté en la cuenta.",si:"Sí, pagó: enviar clave",no:"Todavía no"});
+  if(!r.ok) return;
+  try{ const j=await api({action:"liberarClave",codigo:o.codigo}); reemplazar(j.orden); renderLista();
+    const c=o.c||{}, tel=c.tel||o.telCliente||"";
+    abrirWA("Hola"+(c.nombre?" "+c.nombre.split(" ")[0]:"")+", gracias por completar el pago de tu pedido *"+o.codigo+"* 🙌\n\nTu clave para recogerlo en *"+(c.agencia||"la agencia")+"*"+(c.sede?" ("+c.sede+")":"")+" es: *"+o.clave+"*\n\nLlévala junto con tu DNI.",tel);
+    toast("🔑 Clave liberada"); }
+  catch(e){ toast(msgError(e)); }
 }
 function verConfig(o){ TLConfirm({titulo:"⚙️ Configuración · "+o.codigo,html:TLConfigHTML(o.config),si:"Cerrar",unBoton:true}); }
 async function confirmarConfig(o){

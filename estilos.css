@@ -249,3 +249,6 @@ input:focus-visible,textarea:focus-visible,button:focus-visible,select:focus-vis
 .cfg-tabla th{background:var(--chip)}
 .cfg-datos{font-size:.95rem;margin:0 0 6px;color:var(--ink)}
 .tlc-b.uno .tlc-no{display:none}
+.chip-e.clave{background:#164B77;color:#fff;letter-spacing:.04em}
+.clave-box{margin:14px auto 0;max-width:360px;border:2px dashed #164B77;border-radius:12px;padding:12px;text-align:center}
+.clave-box b{display:block;font-size:2rem;letter-spacing:.2em;color:var(--ink)}

@@ -44,6 +44,8 @@
       <div class="ico" aria-hidden="true">✓</div>
       <h2>¡Listo, tus datos fueron registrados!</h2>
       <p id="ok-txt">Ya estamos preparando tu pedido.</p>
+      <div class="clave-box" id="ok-clave" hidden>Clave para recoger tu pedido en la agencia<b id="ok-clave-n"></b><small>Guárdala: la agencia te la pedirá.</small></div>
+      <div class="clave-box" id="ok-retenida" hidden>🔒 Tu vendedor te enviará la <b style="font-size:1.05rem;letter-spacing:0;display:inline">clave de recojo</b> cuando se complete el pago de tu pedido.</div>
       <button class="btn primary" type="button" id="avisar">Avisar a mi vendedor por WhatsApp</button>
       <button class="btn" type="button" id="editar">Corregir mis datos</button>
     </div>
@@ -75,12 +77,14 @@
     $("#p-prods").innerHTML = orden.productos.map(x=>'<li><b>'+x.q+' ×</b><span>'+esc(x.p)+(x.s?'<small>'+esc(x.s)+'</small>':'')+'</span></li>').join("");
     if(orden.anulada){ error("Este pedido fue anulado. Si tienes dudas, escribe a tu vendedor."); return; }
     if(!orden.editable){
-      if(orden.c){ $("#v-form").hidden=true; $("#v-ok").hidden=false; $("#editar").hidden=true;
+      if(orden.c){ $("#v-form").hidden=true; $("#v-ok").hidden=false; $("#editar").hidden=true; mostrarClave();
         $("#ok-txt").textContent = orden.vencido ? "Este enlace ya venció. Si necesitas cambiar algo, escribe a tu vendedor." : "Tu pedido ya está en preparación. Si necesitas cambiar algo, escribe a tu vendedor."; return; }
       error(orden.vencido ? "Este enlace ya venció. Pide a tu vendedor uno nuevo." : "Este pedido ya está en preparación. Escribe a tu vendedor si necesitas ayuda.");
       return;
     }
-    if(orden.c){ $("#p-aviso").hidden=false; $("#p-aviso").textContent="Ya registraste tus datos. Puedes revisarlos y corregirlos antes de que preparemos tu pedido."; }
+    if(orden.c){ $("#p-aviso").hidden=false; $("#p-aviso").textContent="Ya registraste tus datos. Puedes revisarlos y corregirlos antes de que preparemos tu pedido.";
+      if(!form) form = FormCliente($("#form"), orden.c, { agencias: agenciasLista });
+      $("#v-form").hidden=true; $("#v-ok").hidden=false; $("#editar").hidden=false; $("#ok-txt").textContent="Tus datos ya están registrados."; mostrarClave(); return; }
     $("#v-form").hidden=false; $("#v-ok").hidden=true;
     if(!form) form = FormCliente($("#form"), orden.c || (orden.destinoPrev ? { destino: orden.destinoPrev } : null), { agencias: agenciasLista });
   }
@@ -90,13 +94,14 @@
     try{
       const r = await fetch(TL.API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"clienteGuardar",t:token,c})});
       const j = await r.json();
-      if(j.ok){ orden.c=c; $("#v-form").hidden=true; $("#v-ok").hidden=false; $("#editar").hidden=false; window.scrollTo(0,0); }
+      if(j.ok){ orden.c=c; orden.clave=j.clave||""; orden.claveRetenida=!!j.claveRetenida; mostrarClave(); $("#v-form").hidden=true; $("#v-ok").hidden=false; $("#editar").hidden=false; window.scrollTo(0,0); }
       else if(j.error==="bloqueado"){ error("Tu pedido ya está en preparación, así que no se pueden cambiar los datos aquí. Escribe a tu vendedor."); }
       else if(j.error==="vencido"){ error("Este enlace ya venció. Pide a tu vendedor uno nuevo."); }
       else toast("Revisa los datos e inténtalo de nuevo");
     }catch(e){ toast("Sin conexión. Inténtalo de nuevo."); }
     b.disabled=false; b.textContent="Registrar mis datos";
   };
+  function mostrarClave(){ const k=orden&&orden.clave; $("#ok-clave").hidden=!k; if(k) $("#ok-clave-n").textContent=k; $("#ok-retenida").hidden=!(orden&&orden.claveRetenida); }
   $("#editar").onclick = ()=>{ $("#v-ok").hidden=true; $("#v-form").hidden=false; $("#p-aviso").hidden=true; window.scrollTo(0,0); };
   $("#avisar").onclick = ()=>{
     const c = orden.c || {};

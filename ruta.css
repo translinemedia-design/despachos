@@ -1,0 +1,56 @@
+/* Transline · Hoja de ruta */
+.ruta-datos{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;max-width:760px}
+@media (max-width:560px){.ruta-datos{grid-template-columns:1fr}}
+.sel{display:flex;gap:14px;align-items:flex-start;cursor:pointer}
+.sel input[type=checkbox]{width:30px;height:30px;flex:none;margin-top:4px;accent-color:#2981C4}
+.pedido.elegido{border-color:#2981C4;box-shadow:0 0 0 3px rgba(41,129,196,.25)}
+.ruta-barra{position:sticky;bottom:0;z-index:4;display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:12px 16px;margin-top:16px;box-shadow:0 -6px 18px rgba(0,0,0,.08)}
+.ruta-barra span{font-weight:700;font-size:1.05rem}
+.hoja{background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px}
+.hoja .cab{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+.hoja .od{font-size:1.6rem;font-weight:700}
+.hoja .est{font-weight:700;font-size:.9rem;padding:4px 12px;border-radius:999px;background:var(--chip)}
+.hoja .est.por{background:#FFF1D6;color:#7A4B00}.hoja .est.ruta{background:#DCEEFB;color:#14507E}.hoja .est.ok{background:#DFF2E6;color:#1E5E3E}.hoja .est.anul{background:#E5E7EB;color:#4B5563}
+.hoja .meta{color:var(--muted);font-size:.95rem;margin-top:4px}
+.paradas{list-style:none;margin:12px 0 0;padding:0;border-top:1.5px solid var(--line)}
+.paradas li{display:flex;gap:10px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line);font-size:.98rem;flex-wrap:wrap}
+.paradas li b{min-width:86px}
+.paradas .ok{color:#1E7F55;font-weight:700}
+.paradas a{color:#2981C4}
+.parada{background:var(--surface);border:2px solid var(--line);border-left:8px solid #2981C4;border-radius:14px;padding:16px 18px;margin-bottom:16px}
+.parada.hecha{border-left-color:#1E7F55;opacity:.85}
+.parada .num{display:inline-block;background:#164B77;color:#fff;font-weight:700;border-radius:8px;padding:2px 10px;margin-right:8px}
+.parada .od{font-size:1.4rem;font-weight:700}
+.parada .cli{font-size:1.15rem;font-weight:700;margin-top:8px}
+.parada .lin{font-size:1.02rem;margin-top:4px}
+.parada a.tel{display:inline-block;margin-top:8px;font-weight:700;color:#2981C4;text-decoration:none;font-size:1.1rem}
+.fotos-prev{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.fotos-prev img{width:84px;height:84px;object-fit:cover;border-radius:10px;border:2px solid var(--line)}
+.foto-btn{display:flex;align-items:center;justify-content:center;gap:10px;border:2px dashed #2981C4;border-radius:12px;padding:16px;font-weight:700;color:#2981C4;cursor:pointer;font-size:1.05rem;margin-top:6px}
+.foto-btn input{display:none}
+/* Hoja impresa A4 horizontal (la etiquetera sigue con su tamaño) */
+@page hoja{size:A4 landscape;margin:9mm}
+.hr-print{page:hoja;font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff;font-size:9.5pt;page-break-after:always;break-after:page}
+.hr-print:last-child{page-break-after:auto;break-after:auto}
+.hr-print .top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5mm}
+.hr-print .top img{height:9mm}
+.hr-print .top small{display:block;font-size:8.5pt;margin-top:1mm}
+.hr-print .caja{border:.5mm solid #000;text-align:center;padding:1mm 6mm;font-weight:700;font-size:11pt}
+.hr-print .datos{display:grid;grid-template-columns:auto auto;gap:.5mm 6mm;font-size:9pt;margin-top:1.5mm;font-weight:700}
+.hr-print table{width:100%;border-collapse:collapse}
+.hr-print th{border:.4mm solid #000;padding:1.5mm;font-size:8.5pt}
+.hr-print td{border:.3mm solid #000;padding:1mm 1.5mm;vertical-align:top;font-size:8.5pt}
+.hr-print tr.par td{background:#e3e3e3;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.hr-print td.n{text-align:center;font-weight:700;font-size:11pt;vertical-align:middle;width:8mm}
+.hr-print .at{display:grid;grid-template-columns:7mm 1fr;row-gap:.6mm}
+.hr-print .at span:nth-child(odd){font-size:7pt;font-weight:700}
+.hr-print .firmas{display:flex;justify-content:space-between;margin-top:7mm;font-size:8.5pt;font-weight:700}
+.hr-print .firmas>div{width:42%}
+.hr-print .firmas .linea{border:.4mm solid #000;height:9mm;margin-top:1mm;display:flex;align-items:center;justify-content:center;font-style:italic;font-size:10pt}
+.hr-print .cobrar{font-weight:700}
+@media print{ #print-area .hr-print{display:block} }
+.parada .chips{margin-top:8px}
+.parada .chip{font-size:.85rem;font-weight:700;padding:4px 12px;border-radius:999px;background:#C0392B;color:#fff;display:inline-block}
+.clave-ruta{margin-top:8px;font-size:1.05rem;background:#DCEEFB;color:#14507E;border-radius:10px;padding:8px 12px;display:inline-block}
+.clave-ruta b{font-size:1.35rem;letter-spacing:.12em}

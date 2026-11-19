@@ -42,6 +42,7 @@ function tarjeta(o,clase){
     '<div class="dest">'+esc(destino(o))+'</div>'+
     '<div class="chips">'+(o.embalaje?'<span class="chip emb">'+esc(o.embalaje.toUpperCase())+'</span>':'')+
       (o.pago==="Contraentrega"?'<span class="chip cobrar">CONTRAENTREGA · COBRAR</span>':'')+
+      (o.clave?'<span class="chip emb">🔑 CLAVE AGENCIA: '+esc(o.clave)+'</span>':'')+
       (!o.c?'<span class="chip espera">Cliente aún no envía sus datos</span>':'')+
       (o.corregida?'<span class="chip cobrar">⚠️ PEDIDO CORREGIDO: REVISA LOS PRODUCTOS</span>':'')+
       (bloqueada(o)?'<span class="chip cobrar">⏳ ESPERA: SE PIDIÓ '+(o.sol.tipo==="anulacion"?"ANULAR":"CORREGIR")+' ESTE PEDIDO</span>':'')+
@@ -60,7 +61,7 @@ function pintar(){
   const nuevos=ordenes.filter(o=>o.estado==="Pendiente");
   const alistados=ordenes.filter(o=>o.estado==="Alistado");
   const emb=ordenes.filter(o=>o.estado==="Embalado");
-  const hoy=ordenes.filter(o=>o.estado==="Despachado"&&o.t&&String(o.t.Despachado||"").startsWith(hoyTxt()));
+  const hoy=ordenes.filter(o=>(o.estado==="Despachado"||o.estado==="Entregado")&&o.t&&String(o.t.Despachado||"").startsWith(hoyTxt()));
   const porImp=emb.filter(o=>o.c&&!(o.t&&o.t.impreso)).length;
   const setN=(id,n)=>{const e=$(id);e.textContent=n;e.classList.toggle("cero",!n)};
   setN("#n-alistar",nuevos.length+alistados.length+devolver.length);
@@ -86,7 +87,9 @@ function pintar(){
   const lh=$("#lista-hoy"); lh.innerHTML="";
   if(!hoy.length) lh.innerHTML='<div class="alm-vacio">Todavía no se despacha nada hoy.</div>';
   hoy.forEach(o=>{const d=document.createElement("div");d.className="pedido listo";
-    d.innerHTML=tarjeta(o)+'<div class="acc"><span class="quien">Salió: '+esc(String(o.t.Despachado).split(" · ")[0])+'</span><button type="button" class="deshacer">Reimprimir etiquetas</button></div>';
+    d.innerHTML=tarjeta(o)+'<div class="acc"><span class="quien">Salió: '+esc(String(o.t.Despachado).replace(" · "," · en "))+'</span>'+
+      (o.entrega?'<span class="chip" style="background:#DFF2E6;color:#1E5E3E">✓ '+esc(o.entrega.tipo)+'</span>'+o.entrega.fotos.map((f,k)=>'<a href="'+esc(f.url)+'" target="_blank" rel="noopener">Foto '+(k+1)+'</a>').join(" "):(o.ruta?'<span class="chip">En camino</span>':''))+
+      '<button type="button" class="deshacer">Reimprimir etiquetas</button></div>';
     d.querySelector(".deshacer").onclick=()=>TLEtiq.imprimir([o]); verCfg(d,o); lh.appendChild(d);});
 }
 function marcarNuevo(d,o){ if(previo&&!previo[o.codigo]) d.classList.add("nuevo-flash"); }
@@ -123,7 +126,9 @@ function cardImprimir(o){
   if(!o.c) acc='<button type="button" class="alm-btn sec ancho" disabled>⏳ Esperando los datos del cliente</button>';
   else if(!impresa) acc='<div class="bultos-box"><label>Etiquetas de flechas</label><div class="stepper"><button type="button" aria-label="Una menos">−</button><input type="tel" inputmode="numeric" value="'+(o.flechas||o.bultos*2)+'" aria-label="Flechas"><button type="button" aria-label="Una más">+</button></div></div>'+
     '<button type="button" class="alm-btn azul ancho" data-a="imp" '+(bloqueada(o)?'disabled':'')+'>🖨️ Imprimir '+o.bultos+' etiqueta'+(o.bultos>1?'s':'')+' + flechas</button>';
-  else acc='<button type="button" class="alm-btn ancho" data-a="desp">🚚 Ya salió (despachado)</button><button type="button" class="alm-btn sec" data-a="re">Reimprimir</button>';
+  else if(o.ruta) acc='<span class="chip" style="background:#DCEEFB;color:#14507E">🗂️ En la hoja de ruta '+esc(o.ruta)+' · falta aprobar la salida</span><button type="button" class="alm-btn sec" data-a="re">Reimprimir</button>';
+  else acc='<a class="alm-btn ancho" style="text-align:center;text-decoration:none" href="ruta.html">🗂️ Lista para la hoja de ruta</a><button type="button" class="alm-btn sec" data-a="re">Reimprimir</button>'+
+    '<button type="button" class="deshacer" data-a="desp">Salió sin hoja de ruta (p. ej. recojo en tienda)</button>';
   d.innerHTML=tarjeta(o)+'<div class="acc">'+acc+'</div>'+(o.estado==="Embalado"&&!impresa?'<div class="acc"><button type="button" class="deshacer" data-a="atras">↩ Volver a "Alistados"</button></div>':'');
   const on=(a,fn)=>{const b=d.querySelector('[data-a="'+a+'"]'); if(b) b.onclick=fn;};
   const fl=d.querySelector(".stepper input");
@@ -131,7 +136,8 @@ function cardImprimir(o){
   on("imp",async e=>{ TLEtiq.imprimir([Object.assign({},o,{_flechas:Math.max(0,parseInt(fl.value,10)||0)})]); e.target.disabled=true;
     try{ const j=await api({action:"impreso",codigo:o.codigo}); reemplazar(j.orden); pintar(); }catch(err){ toast("Se imprimió, pero no se pudo guardar. Revisa el internet."); e.target.disabled=false; } });
   on("re",()=>TLEtiq.imprimir([o]));
-  on("desp",e=>estado(o,"Despachado",null,e.target));
+  on("desp",async e=>{ const r=await TLConfirm({titulo:"¿"+o.codigo+" salió sin hoja de ruta?",texto:"Úsalo solo cuando el pedido no viaja en el camión (por ejemplo, el cliente lo recoge en tienda).",campo:{label:"¿Por qué sale sin hoja de ruta?",placeholder:"Ej.: el cliente recogió en tienda",min:5},si:"Sí, salió"}); if(!r.ok) return;
+    e.target.disabled=true; try{ const j=await api({action:"salioSinRuta",codigo:o.codigo,motivo:r.valor}); reemplazar(j.orden); pintar(); toast("🚚 "+o.codigo+" salió"); }catch(err){ e.target.disabled=false; toast(msg(err)); } });
   on("atras",e=>estado(o,"Alistado",null,e.target));
   verCfg(d,o);
   return d;
