@@ -67,8 +67,8 @@ function pintar(){
   const dv=$("#devolver"); dv.innerHTML=""; dv.hidden=!devolver.length;
   if(devolver.length) dv.innerHTML='<h2>🔙 Pedidos anulados: devolver los productos al estante</h2>';
   devolver.forEach(o=>{ const d=document.createElement("div"); d.className="pedido espera";
-    d.innerHTML=tarjeta(o)+'<div class="obs">Motivo: '+esc(o.sol?o.sol.motivo:"")+'</div><div class="acc"><button type="button" class="alm-btn ancho">✓ Ya devolví los productos al estante</button></div>';
-    d.querySelector(".alm-btn").onclick=async e=>{ const r=await TLConfirm({titulo:"¿Devolviste todos los productos de "+o.codigo+" al estante?",si:"Sí, ya están",no:"Todavía no"}); if(!r.ok) return;
+    d.innerHTML=tarjeta(o)+'<div class="obs">Motivo: '+esc(o.sol?o.sol.motivo:"")+'</div><div class="acc"><button type="button" class="alm-btn ancho" data-a="devuelto">✓ Ya devolví los productos al estante</button></div>';
+    d.querySelector('[data-a="devuelto"]').onclick=async e=>{ const r=await TLConfirm({titulo:"¿Devolviste todos los productos de "+o.codigo+" al estante?",si:"Sí, ya están",no:"Todavía no"}); if(!r.ok) return;
       e.target.disabled=true; try{ const j=await api({action:"devuelto",codigo:o.codigo}); reemplazar(j.orden); pintar(); toast("✓ "+o.codigo+": productos devueltos"); }catch(err){ e.target.disabled=false; toast(msg(err)); } };
     verCfg(d,o); dv.appendChild(d); }); setN("#n-imprimir",emb.length); $("#n-hoy").textContent=hoy.length;
   document.title=(nuevos.length?"("+nuevos.length+") ":"")+"Alistar pedidos · Transline";
@@ -107,11 +107,11 @@ function cardAlistar(o){
 function cardEmbalar(o){
   const d=document.createElement("div"); d.className="pedido alistado";
   d.innerHTML=tarjeta(o)+'<div class="bultos-box"><label>¿Cuántos bultos?</label><div class="stepper"><button type="button" aria-label="Uno menos">−</button><input type="tel" inputmode="numeric" value="'+(o.bultos||1)+'" aria-label="Bultos"><button type="button" aria-label="Uno más">+</button></div>'+
-    '<button type="button" class="alm-btn azul ancho" '+(bloqueada(o)?'disabled':'')+'>📦 Ya está embalado</button></div>'+
+    '<button type="button" class="alm-btn azul ancho" data-a="emb" '+(bloqueada(o)?'disabled':'')+'>📦 Ya está embalado</button></div>'+
     '<div class="acc"><button type="button" class="deshacer">↩ Volver a "Nuevos"</button></div>';
   const inp=d.querySelector(".stepper input"), [menos,mas]=d.querySelectorAll(".stepper button");
   menos.onclick=()=>{inp.value=Math.max(1,(parseInt(inp.value,10)||1)-1)}; mas.onclick=()=>{inp.value=Math.min(99,(parseInt(inp.value,10)||1)+1)};
-  d.querySelector(".alm-btn").onclick=e=>{const n=parseInt(inp.value,10); if(!(n>=1&&n<=99)){toast("Escribe cuántos bultos son (1 a 99)");return} estado(o,"Embalado",n,e.target)};
+  d.querySelector('[data-a="emb"]').onclick=e=>{const n=parseInt(inp.value,10); if(!(n>=1&&n<=99)){toast("Escribe cuántos bultos son (1 a 99)");return} estado(o,"Embalado",n,e.target)};
   d.querySelector(".deshacer").onclick=e=>estado(o,"Pendiente",null,e.target);
   verCfg(d,o);
   return d;

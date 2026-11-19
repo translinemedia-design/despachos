@@ -67,3 +67,8 @@ body.alm{font-size:18px;background:var(--paper)}
 .cfg-box td,.cfg-box th{border:1px solid rgba(0,0,0,.15);padding:3px 9px;text-align:center}
 .pedido .bultos-box{margin-top:12px}
 .pedido .acc .bultos-box{flex-basis:100%;margin-top:0}
+/* Recuadro de configuración legible también en modo oscuro (fondo claro, texto oscuro fijo) */
+.cfg-box{color:#4A3500}
+.cfg-box.hecho{color:#14532D}
+.cfg-box b{color:inherit}
+@media (prefers-color-scheme:dark){ .alm-devolver h2{color:#FF8A8A} }
