@@ -54,3 +54,5 @@
 .parada .chip{font-size:.85rem;font-weight:700;padding:4px 12px;border-radius:999px;background:#C0392B;color:#fff;display:inline-block}
 .clave-ruta{margin-top:8px;font-size:1.05rem;background:#DCEEFB;color:#14507E;border-radius:10px;padding:8px 12px;display:inline-block}
 .clave-ruta b{font-size:1.35rem;letter-spacing:.12em}
+.pedido.bloq{opacity:.6;border-style:dashed}
+.pedido.bloq .chip.cobrar{background:#C0392B;color:#fff;font-size:.85rem;font-weight:700;padding:4px 12px;border-radius:999px}

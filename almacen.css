@@ -78,3 +78,5 @@ body.alm{font-size:18px;background:var(--paper)}
 .rep-rango input{width:70px;text-align:center;font:inherit;font-size:1.2rem;font-weight:700;border:2px solid var(--line);border-radius:10px;min-height:46px;background:var(--surface);color:var(--ink)}
 .rep-ayuda{font-size:.88rem;color:var(--muted);margin:6px 0 0}
 .tlc .stepper{display:inline-flex}
+.pedido .chip.tipo{background:#6D28D9;color:#fff}
+.pedido:has(.chip.tipo){border-left-color:#7C3AED}

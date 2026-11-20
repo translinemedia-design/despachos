@@ -252,3 +252,5 @@ input:focus-visible,textarea:focus-visible,button:focus-visible,select:focus-vis
 .chip-e.clave{background:#164B77;color:#fff;letter-spacing:.04em}
 .clave-box{margin:14px auto 0;max-width:360px;border:2px dashed #164B77;border-radius:12px;padding:12px;text-align:center}
 .clave-box b{display:block;font-size:2rem;letter-spacing:.2em;color:var(--ink)}
+.chip-e.tipo{background:#EDE4FA;color:#4C2A85}
+.tlc-sel{width:100%;min-height:48px;font:inherit;font-size:1.05rem;border:1.5px solid var(--line);border-radius:10px;padding:0 10px;background:var(--surface);color:var(--ink)}

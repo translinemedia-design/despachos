@@ -28,7 +28,9 @@ function direccion(o){ const c=o.c||{};
 function recibe(o){ const c=o.c||{}; return c.atencion&&c.atencion.nombre?{n:c.atencion.nombre,d:c.atencion.doc,t:c.atencion.tel}:{n:c.nombre,d:c.doc,t:c.tel}; }
 
 /* ---------- Armar ruta ---------- */
-function listos(){ return ordenes.filter(o=>o.estado==="Embalado"&&o.c&&o.t&&o.t.impreso&&!o.ruta&&!(o.sol&&o.sol.estado==="Solicitada")); }
+const PAGO_BLOQUEA=["Pendiente","Adelanto · saldo antes de despachar"];
+function listos(){ return ordenes.filter(o=>o.estado==="Embalado"&&o.c&&o.t&&o.t.impreso&&!o.ruta&&!(o.sol&&o.sol.estado==="Solicitada")&&!PAGO_BLOQUEA.includes(o.pago)); }
+function bloqueadosPago(){ return ordenes.filter(o=>o.estado==="Embalado"&&o.c&&o.t&&o.t.impreso&&!o.ruta&&PAGO_BLOQUEA.includes(o.pago)); }
 function pintarArmar(){
   const l=listos(); $("#n-armar").textContent=l.length; $("#n-armar").classList.toggle("cero",!l.length);
   [...elegidas].forEach(c=>{ if(!l.some(o=>o.codigo===c)) elegidas.delete(c); });
@@ -40,6 +42,10 @@ function pintarArmar(){
       '<div class="dest">📍 '+esc(destino(o))+'</div><div class="quien" style="margin-top:4px">'+esc(r.n)+' · '+o.bultos+' bulto'+(o.bultos>1?'s':'')+'</div>'+
       (o.pago==="Contraentrega"?'<div class="chips"><span class="chip cobrar">CONTRAENTREGA · COBRAR</span></div>':'')+'</div>';
     d.querySelector("input").onchange=e=>{ e.target.checked?elegidas.add(o.codigo):elegidas.delete(o.codigo); pintarArmar(); };
+    el.appendChild(d); });
+  bloqueadosPago().forEach(o=>{ const d=document.createElement("div"); d.className="pedido bloq";
+    d.innerHTML='<div class="cab"><span class="od">'+esc(o.codigo)+'</span><span class="quien">'+esc(o.vendedor)+'</span></div><div class="dest">📍 '+esc(destino(o))+'</div>'+
+      '<div class="chips"><span class="chip cobrar">⛔ Falta el pago ('+esc(o.pago)+'): no puede salir</span></div>';
     el.appendChild(d); });
   const sel=l.filter(o=>elegidas.has(o.codigo)), bultos=sel.reduce((a,o)=>a+(o.bultos||0),0);
   $("#barra-armar").hidden=!sel.length; $("#resumen-armar").textContent=sel.length+" orden"+(sel.length>1?"es":"")+" · "+bultos+" bulto"+(bultos!==1?"s":"");

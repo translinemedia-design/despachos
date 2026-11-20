@@ -5,7 +5,9 @@ const LS = { get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v)
 const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const pad = n => String(n).padStart(2,"0");
 const ESTADOS = ["Pendiente","Alistado","Embalado","Despachado"];
-const PAGOS = ["Cancelado","Pendiente","Contraentrega","Adelanto"];
+const PAGOS = ["Cancelado","Adelanto 50% · saldo en agencia","Adelanto · saldo antes de despachar","Contraentrega","Pendiente"];
+const PAGO_BLOQUEA = ["Pendiente","Adelanto · saldo antes de despachar"];
+const bloqueaSalida = o => PAGO_BLOQUEA.includes(o.pago);
 const EXTRA_KEY = "tl_extra";
 const key = p => p.n+"|"+(p.s||"");
 
@@ -21,11 +23,11 @@ let ordenes = LS.get("tl_ordenes2",[]);
 let catalogo = (LS.get("tl_catalogo",null)||CAT_BASE).concat(LS.get(EXTRA_KEY,[]));
 let catSel = "";
 let agencias = LS.get("tl_agencias",[]);
-const opForm = () => ({ agencias, buscarCliente: async doc => { const r=await fetch(TL.API_URL+"?action=buscarCliente&pin="+encodeURIComponent(PIN)+"&doc="+doc); const j=await r.json(); return j.ok?j.cliente:null; } });
+const opForm = (sinVenta) => ({ agencias, sinVenta: !!sinVenta, buscarCliente: async doc => { const r=await fetch(TL.API_URL+"?action=buscarCliente&pin="+encodeURIComponent(PIN)+"&doc="+doc); const j=await r.json(); return j.ok?j.cliente:null; } });
 let nuevos = new Set(LS.get("tl_nuevos",[]));
 let estadosPrev = LS.get("tl_estados4",null);
 let formNueva = null, formDatos = null, ordenDatos = null;
-const S = { lineas:[], pago:"Cancelado", embalaje:"Automático", quien:"El cliente (link)", destino:"" };
+const S = { cfgModo:"Personalizada", lineas:[], pago:"Cancelado", embalaje:"Automático", quien:"El cliente (link)", destino:"", tipoOrden:"Venta" };
 let creada = null, hechos = new Set();
 
 /* ---------- utilidades ---------- */
@@ -39,7 +41,7 @@ function qrURL(o){ return new URL("./#o="+o.codigo, location.href).href; }
 function rol(...r){ return !!U && (U.roles||[U.rol]).some(x=>r.includes(x)); }
 const soloAlmacen = () => rol("almacen") && !rol("vendedor","admin");
 function claseEstado(e){ return {"Esperando cliente":"esperando","Pendiente":"pendiente","Alistado":"alistado","Embalado":"embalado","Despachado":"despachado","Anulada":"anulada"}[e]||""; }
-const ERRORES={permiso:"Tu usuario no tiene permiso para esto.",sin_datos:"Falta que el cliente complete sus datos.",anulada:"La orden está anulada.",despachado:"La orden ya salió: se gestiona como devolución.",solicitud:"Hay una solicitud de anulación o corrección pendiente.",ya_solicitada:"Ya hay una solicitud pendiente para esta orden.",motivo:"Escribe el motivo (al menos 10 caracteres).",propia:"No puedes aprobar tu propia solicitud. Debe hacerlo otro supervisor.",config:"Falta confirmar la configuración de las luminarias.",sin_solicitud:"La solicitud ya fue resuelta."};
+const ERRORES={pago:"Falta el pago: el pedido no puede salir hasta confirmarlo.",pagado:"El pedido ya está pagado.",permiso:"Tu usuario no tiene permiso para esto.",sin_datos:"Falta que el cliente complete sus datos.",anulada:"La orden está anulada.",despachado:"La orden ya salió: se gestiona como devolución.",solicitud:"Hay una solicitud de anulación o corrección pendiente.",ya_solicitada:"Ya hay una solicitud pendiente para esta orden.",motivo:"Escribe el motivo (al menos 10 caracteres).",propia:"No puedes aprobar tu propia solicitud. Debe hacerlo otro supervisor.",config:"Falta confirmar la configuración de las luminarias.",sin_solicitud:"La solicitud ya fue resuelta."};
 const msgError=e=>ERRORES[e.message]||"No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.";
 
 async function api(body){
@@ -95,11 +97,14 @@ function msgLink(o){
 function msgEnvios(o){
   const c=o.c, L=[], d=destinoDe(o);
   L.push("📦 *"+o.codigo+"* · "+o.vendedor);
+  if(o.tipo==="OCA") L.push("🔁 *CAMBIO ANTICIPADO*"+(o.caso?" · "+o.caso:"")+" · sin cobro");
+  if(o.tipo==="OC") L.push("🔁 *ENVÍO POR GARANTÍA* · "+o.caso);
   if(d==="Provincia"){ const ciudad=c&&c.ciudad?" – "+c.ciudad:""; const ag=c&&c.agencia?c.agencia+(c.entrega==="Entrega a domicilio"?" · a domicilio":(c.sede?" ("+c.sede+")":"")):"Agencia por confirmar"; L.push("📍 Provincia"+ciudad+" · "+ag); }
   else if(d==="Lima"){ L.push("📍 Lima"+(c?(c.entrega==="Recojo en tienda"?" · Recojo en tienda":(c.distrito?" – "+c.distrito:"")):"")); }
   else L.push("📍 Destino por confirmar");
   if(o.embalaje) L.push("🎁 "+o.embalaje);
   if(o.pago==="Contraentrega") L.push("💵 *CONTRAENTREGA*: cobrar al entregar");
+  if(bloqueaSalida(o)) L.push("⛔ *No sale hasta confirmar el pago* (se puede alistar y embalar)");
   L.push("");
   const total=o.productos.reduce((a,x)=>a+(+x.q||0),0);
   L.push("🛒 *"+total+" producto"+(total===1?"":"s")+":*");
@@ -111,7 +116,9 @@ function msgEnvios(o){
 /* Grupo de Comprobantes (comercial): todos los datos para factura, boleta y guía */
 function msgComprobantes(o){
   const c=o.c||{}, L=[];
-  L.push("📄 *"+o.codigo+"* · "+o.vendedor); L.push("");
+  L.push("📄 *"+o.codigo+"* · "+o.vendedor);
+  if(o.tipo&&o.tipo!=="OD") L.push("🔁 *"+(o.tipo==="OCA"?"Cambio anticipado":"Envío por garantía")+"*"+(o.caso?" · "+o.caso:"")+" · sin venta: solo guía de remisión");
+  L.push("");
   L.push("🧾 *"+(c.comprobante||"—").toUpperCase()+"*");
   L.push("🧑 *"+(c.nombre||"—")+"*");
   L.push((c.doc?"🪪 "+(c.tipoDoc||"DNI")+" "+c.doc+"  |  ":"")+"📞 "+(c.tel||""));
@@ -128,7 +135,8 @@ function msgComprobantes(o){
   return L.join("\n");
 }
 /* ---------- catálogo ---------- */
-function renderCats(){
+function llenarModelos(){ const dl=$("#lista-modelos"); if(dl) dl.innerHTML=catalogo.map(p=>'<option value="'+esc(p.n)+'">').join(""); }
+function renderCats(){ llenarModelos();
   const el=$("#cats");el.innerHTML="";
   ["Todos",...new Set(catalogo.map(p=>p.c))].forEach(c=>{const b=document.createElement("button");b.type="button";b.textContent=c;
     const val=c==="Todos"?"":c;b.setAttribute("aria-pressed",catSel===val);b.onclick=()=>{catSel=val;renderCats();renderCat()};el.appendChild(b)});
@@ -167,12 +175,13 @@ function filasCfg(){ const q=c=>[...document.querySelectorAll("#cfg-niveles "+c)
   return h.map((x,i)=>({querySelector:sel=>sel===".cfg-h"?x:p[i]})); }
 function leerConfig(){ return {lugar:$("#cfg-lugar").value.trim(),altura:$("#cfg-altura").value.trim(),responsable:$("#cfg-resp").value.trim(),
   niveles:filasCfg().map(f=>({h:f.querySelector(".cfg-h").value,p:f.querySelector(".cfg-p").value}))}; }
-function cargarConfig(k){ $("#cfg-lugar").value=k?k.lugar:""; $("#cfg-altura").value=k?k.altura:""; $("#cfg-resp").value=k?k.responsable:"";
+function cargarConfig(k){ S.cfgModo=k&&k.fabrica?"De fábrica":"Personalizada"; if($("#cfg-modo")) seg($("#cfg-modo"),"cfgModo"); $("#cfg-lugar").value=k?k.lugar:""; $("#cfg-altura").value=k?k.altura:""; $("#cfg-resp").value=k?k.responsable:"";
   filasCfg().forEach((f,i)=>{const n=k&&k.niveles&&k.niveles[i]; f.querySelector(".cfg-h").value=n&&n.h?n.h:""; f.querySelector(".cfg-p").value=n?n.p:"";}); totalCfg(); }
 function totalCfg(){ const fs=filasCfg(); const t=fs.reduce((a,f)=>a+(parseFloat(f.querySelector(".cfg-h").value)||0),0);
   const ultimo=!fs[4].querySelector(".cfg-h").value; $("#cfg-total").textContent="Total: "+(Math.round(t*100)/100)+" h"+(ultimo?" + el nivel 5 hasta el amanecer":"")+(t>14?" · revisa: es más que una noche normal":""); }
 function validarConfig(){
   if(!necesitaConfig()) return null;
+  if(S.cfgModo==="De fábrica") return {fabrica:true};
   const k=leerConfig();
   if(!k.lugar||!k.altura||!k.responsable||k.niveles.some((n,i)=>(i<4&&!(parseFloat(n.h)>0))||!(parseInt(n.p,10)>0))){
     toast("Completa la configuración: lugar, altura, responsable, cantidad de los niveles 1 a 4 y los 5 porcentajes"); $("#box-config").scrollIntoView({block:"start",behavior:"smooth"}); return false; }
@@ -183,16 +192,22 @@ document.addEventListener("change",e=>{ if(e.target.closest&&e.target.closest("#
 function sync(){
   const corr=!!S.corrigiendo, yo=S.quien==="Los lleno yo";
   $("#box-cliente").hidden=corr; $("#box-link").hidden=yo; $("#box-yo").hidden=!yo; $("#box-destino").hidden=yo||corr;
-  $("#box-config").hidden=!necesitaConfig();
-  if(yo&&!corr&&!formNueva) formNueva=FormCliente($("#form-nueva"),S.destino?{destino:S.destino}:null,opForm());
+  $("#box-config").hidden=!necesitaConfig(); $("#cfg-campos").hidden=S.cfgModo==="De fábrica";
+  const oca=S.tipoOrden==="Cambio anticipado";
+  $("#box-oca").hidden=!oca||corr; $("#pago").hidden=oca; $("#pago-oca").hidden=!oca;
+  if(formNueva&&formNueva._sinVenta!==oca){ $("#form-nueva").innerHTML=""; formNueva=null; }
+  if(yo&&!corr&&!formNueva){ formNueva=FormCliente($("#form-nueva"),S.destino?{destino:S.destino}:null,opForm(oca)); formNueva._sinVenta=oca; }
   const falta=[]; if(!S.lineas.length) falta.push("productos"); if(!corr&&!yo&&!S.destino) falta.push("Lima o Provincia");
   $("#missing").textContent=falta.length?"Falta: "+falta.join(", "):"";
   $("#enviar").disabled=!!falta.length; $("#enviar").textContent=corr?"Guardar corrección":"Crear orden";
 }
-function limpiarNueva(){ S.lineas=[]; S.pago="Cancelado"; S.embalaje="Automático"; S.destino=""; S.corrigiendo=null; $("#banner-corr").hidden=true;
+function limpiarNueva(){ S.tipoOrden="Venta"; if($("#tipo-orden")) seg($("#tipo-orden"),"tipoOrden");
+seg($("#cfg-modo"),"cfgModo"); ["#oca-caso","#oca-modelo"].forEach(id=>{ if($(id)) $(id).value=""; }); if($("#oca-q")) $("#oca-q").value="1"; S.lineas=[]; S.pago="Cancelado"; S.embalaje="Automático"; S.destino=""; S.corrigiendo=null; $("#banner-corr").hidden=true;
   chips($("#pago"),PAGOS,"pago"); seg($("#embalaje"),"embalaje"); seg($("#destino-nueva"),"destino");
   ["#obs","#tel-cliente","#buscar"].forEach(id=>$(id).value=""); cargarConfig(null); if(formNueva){ $("#form-nueva").innerHTML=""; formNueva=null; } renderLineas(); sync(); }
 seg($("#destino-nueva"),"destino");
+seg($("#tipo-orden"),"tipoOrden");
+seg($("#cfg-modo"),"cfgModo");
 let idPendiente=null;
 async function crearOrden(){
   if(S.corrigiendo) return guardarCorreccion();
@@ -201,11 +216,15 @@ async function crearOrden(){
   if(yo){ c=formNueva.validar(); if(!c){ toast("Revisa los datos del cliente"); return; } }
   else if(!S.destino){ toast("Elige Lima o Provincia"); return; }
   const config=validarConfig(); if(config===false) return;
-  const r=await TLConfirm({titulo:"¿Crear la orden?",texto:S.lineas.reduce((a,l)=>a+l.q,0)+" productos · "+(yo?c.destino:S.destino)+(config?" · con configuración de drivers":""),si:"Sí, crear"});
+  const oca=S.tipoOrden==="Cambio anticipado";
+  if(oca&&!$("#oca-modelo").value.trim()){ toast("Indica qué equipo con falla devolverá el cliente"); $("#oca-modelo").focus(); return; }
+  if(oca&&$("#oca-caso").value.trim()&&!/^GAR-\d{4,}$/i.test($("#oca-caso").value.trim())){ toast("El caso debe tener el formato GAR-0023"); $("#oca-caso").focus(); return; }
+  const r=await TLConfirm({titulo:oca?"¿Crear la orden de cambio anticipado (OCA)?":"¿Crear la orden?",texto:S.lineas.reduce((a,l)=>a+l.q,0)+" productos · "+(yo?c.destino:S.destino)+(config?" · con configuración de drivers":""),si:"Sí, crear"});
   if(!r.ok) return;
   idPendiente=idPendiente||idTemporal();
   const orden={idc:idPendiente,productos:S.lineas.map(l=>({p:l.p,s:l.s,q:l.q})),pago:S.pago,obs:$("#obs").value.trim(),
-    telCliente:$("#tel-cliente").value.replace(/\D/g,""),embalajeModo:S.embalaje,destino:yo?c.destino:S.destino,c,config};
+    telCliente:$("#tel-cliente").value.replace(/\D/g,""),embalajeModo:S.embalaje,destino:yo?c.destino:S.destino,c,config,
+    tipoOrden:S.tipoOrden,caso:$("#oca-caso").value.trim().toUpperCase(),devolver:oca?{modelo:$("#oca-modelo").value.trim(),q:$("#oca-q").value}:null};
   const b=$("#enviar"); b.disabled=true; b.textContent="Creando…";
   try{
     const j=await api({action:"crear",orden}); const o=j.orden; idPendiente=null;
@@ -315,7 +334,7 @@ $("#c-ver").onclick=()=>{tab("ordenes"); $("#f-buscar").value=creada?creada.codi
 
 /* ---------- llenar datos de una orden existente ---------- */
 function abrirDatos(o){
-  ordenDatos=o; $("#d-codigo").textContent=o.codigo; $("#form-datos").innerHTML=""; formDatos=FormCliente($("#form-datos"), o.c, opForm());
+  ordenDatos=o; $("#d-codigo").textContent=o.codigo; $("#form-datos").innerHTML=""; formDatos=FormCliente($("#form-datos"), o.c, opForm(o.tipo&&o.tipo!=="OD"));
   tab("datos");
 }
 $("#d-cancelar").onclick=()=>tab("ordenes");
@@ -354,8 +373,13 @@ function renderLista(){
       '<div style="margin-top:6px"><span class="chip-e '+claseEstado(o.estado)+'">'+esc(o.estado)+'</span>'+(c?' <span class="chip-e">'+esc(c.comprobante)+'</span>':' <span class="chip-e esperando">Sin datos del cliente</span>')+(o.bultos?' <span class="chip-e">'+o.bultos+' bulto'+(o.bultos>1?'s':'')+'</span>':'')+
         (pendSol?' <span class="chip-e alerta">⏳ '+(o.sol.tipo==="anulacion"?"Anulación":"Corrección")+' por aprobar</span>':'')+
         (o.corregida?' <span class="chip-e aviso">Corregida: volver a alistar</span>':'')+
-        (o.config?' <span class="chip-e '+(o.config.hecho?'':'aviso')+'">⚙️ Configuración '+(o.config.hecho?'hecha':'pendiente')+'</span>':'')+
+        (o.config&&!o.config.fabrica?' <span class="chip-e '+(o.config.hecho?'':'aviso')+'">⚙️ Configuración '+(o.config.hecho?'hecha':'pendiente')+'</span>':'')+
         (anulada&&o.devolverEstante?' <span class="chip-e alerta">Devolver al estante</span>':'')+
+        (bloqueaSalida(o)&&!anulada&&o.estado!=="Despachado"&&o.estado!=="Entregado"?' <span class="chip-e alerta">⛔ No sale hasta confirmar el pago</span>':'')+
+        (o.config&&o.config.fabrica?' <span class="chip-e">⚙️ Configuración de fábrica</span>':'')+
+        (o.tipo&&o.tipo!=="OD"?' <span class="chip-e tipo">🔁 '+esc(o.tipo)+(o.caso?' · '+esc(o.caso):'')+'</span>':'')+
+        (o.tipo==="OCA"&&o.devolver&&!o.recibidoFalla&&!anulada?' <span class="chip-e '+(diasDesde(o)>15?'alerta':'aviso')+'">↩️ Falta recibir '+o.devolver.q+' × '+esc(o.devolver.modelo)+(diasDesde(o)!=null?' ('+diasDesde(o)+' días)':'')+'</span>':'')+
+        (o.tipo==="OCA"&&o.recibidoFalla?' <span class="chip-e despachado">✓ Equipo con falla recibido ('+esc(o.recibidoFalla.caso)+')</span>':'')+
         (o.clave&&!anulada?' <span class="chip-e clave">🔑 Clave agencia: '+esc(o.clave)+(claveRetenida(o)?' · 🔒 retenida':'')+'</span>':'')+'</div>'+
       '<div class="dest-l">'+esc(lugarCorto(o))+(o.embalaje?' · '+esc(o.embalaje):'')+'</div>'+
       (c&&c.atencion?'<div class="dest-l">Atención a: '+esc(c.atencion.nombre)+'</div>':'')+
@@ -370,8 +394,9 @@ function renderLista(){
     if(rol("vendedor","admin") && !impresa && o.estado!=="Despachado" && !anulada) h+='<button type="button" class="btn" data-a="llenar">'+(c?"Corregir datos del cliente":"Llenar yo los datos")+'</button>';
     if(rol("vendedor","admin") && !anulada && o.estado!=="Despachado" && !pendSol && (rol("admin","almacen")||o.vendedor===U.nombre))
       h+='<button type="button" class="btn" data-a="corregir">Corregir pedido</button><button type="button" class="btn peligro" data-a="anular">Anular</button>';
-    if(claveRetenida(o)&&!anulada&&(rol("admin","supervisor")||o.vendedor===U.nombre)) h+='<button type="button" class="btn primary" data-a="saldo">💰 Saldo pagado: enviar clave</button>';
-    if(o.config) h+='<button type="button" class="btn" data-a="vercfg">⚙️ Ver configuración</button>';
+    if(o.pago!=="Cancelado"&&o.pago!=="Sin cobro"&&!anulada&&(rol("admin","supervisor")||o.vendedor===U.nombre)) h+='<button type="button" class="btn primary" data-a="saldo">💰 Pago completo'+(claveRetenida(o)?': enviar clave':'')+'</button>';
+    if(rol("admin")&&(o.estado!=="Pendiente")) h+='<button type="button" class="btn" data-a="atras">↩️ '+(anulada?'Reactivar':'Retroceder')+'</button>';
+    if(o.config&&!o.config.fabrica) h+='<button type="button" class="btn" data-a="vercfg">⚙️ Ver configuración</button>';
     if(o.hist&&o.hist.length) h+='<button type="button" class="btn" data-a="hist">Historial</button>';
     if(c&&o.token&&rol("vendedor","admin")) h+='';
     if(nuevos.has(o.codigo)) h+='<button type="button" class="btn" data-a="visto">Marcar como visto</button>';
@@ -386,6 +411,7 @@ function renderLista(){
     on("hist",()=>{const x=d.querySelector(".hist"); x.hidden=!x.hidden;});
     on("vercfg",()=>verConfig(o));
     on("saldo",()=>liberarClave(o));
+    on("atras",()=>retroceder(o));
     on("visto",()=>{visto(o.codigo);renderLista()});
     d.querySelectorAll(".states button").forEach(b=>b.onclick=()=>{
       if(b.dataset.s==="Embalado"){ d.querySelector(".bultos").hidden=false; d.querySelector(".bultos input").focus(); return; }
@@ -398,14 +424,30 @@ function renderLista(){
     el.appendChild(d);
   });
 }
-const claveRetenida=o=>!!o.clave&&o.pago!=="Cancelado"&&!o.claveLiberada;
+const claveRetenida=o=>!!o.clave&&o.pago!=="Cancelado"&&o.pago!=="Sin cobro"&&!(o.tipo&&o.tipo!=="OD")&&!o.claveLiberada;
+function diasDesde(o){ const s=String((o.t&&o.t.Despachado)||"").split(" ")[0].split("/"); if(s.length!==3) return null; return Math.floor((Date.now()-new Date(+s[2],+s[1]-1,+s[0]).getTime())/86400000); }
 async function liberarClave(o){
-  const r=await TLConfirm({titulo:"¿El cliente ya pagó el saldo de "+o.codigo+"?",texto:"Pago registrado: "+o.pago+". Al confirmar, se le enviará la clave "+o.clave+" para recoger en la agencia. Hazlo solo cuando el pago esté en la cuenta.",si:"Sí, pagó: enviar clave",no:"Todavía no"});
+  const conClave=claveRetenida(o);
+  const r=await TLConfirm({titulo:"¿"+o.codigo+" ya está pagado por completo?",texto:"Pago registrado: "+o.pago+". Al confirmar, el pago pasa a Cancelado"+(bloqueaSalida(o)?" y el pedido podrá salir en la hoja de ruta":"")+(conClave?". Se enviará al cliente la clave "+o.clave+" para recoger en la agencia":"")+". Hazlo solo cuando el dinero esté en la cuenta.",si:"Sí, pagó todo",no:"Todavía no"});
   if(!r.ok) return;
   try{ const j=await api({action:"liberarClave",codigo:o.codigo}); reemplazar(j.orden); renderLista();
-    const c=o.c||{}, tel=c.tel||o.telCliente||"";
-    abrirWA("Hola"+(c.nombre?" "+c.nombre.split(" ")[0]:"")+", gracias por completar el pago de tu pedido *"+o.codigo+"* 🙌\n\nTu clave para recogerlo en *"+(c.agencia||"la agencia")+"*"+(c.sede?" ("+c.sede+")":"")+" es: *"+o.clave+"*\n\nLlévala junto con tu DNI.",tel);
-    toast("🔑 Clave liberada"); }
+    if(conClave){ const c=o.c||{}, tel=c.tel||o.telCliente||"";
+      abrirWA("Hola"+(c.nombre?" "+c.nombre.split(" ")[0]:"")+", gracias por completar el pago de tu pedido *"+o.codigo+"* 🙌\n\nTu clave para recogerlo en *"+(c.agencia||"la agencia")+"*"+(c.sede?" ("+c.sede+")":"")+" es: *"+o.clave+"*\n\nLlévala junto con tu DNI.",tel); }
+    toast("💰 Pago confirmado"+(conClave?" · clave enviada":"")); }
+  catch(e){ toast(msgError(e)); }
+}
+async function retroceder(o){
+  const pasos=["Pendiente","Alistado","Embalado","Despachado","Entregado"], ia=pasos.indexOf(o.estado);
+  const destinos=o.estado==="Anulada"?["Pendiente"]:pasos.slice(0,Math.max(0,ia));
+  if(!destinos.length) return;
+  let elegido=destinos[destinos.length-1];
+  const p=TLConfirm({titulo:(o.estado==="Anulada"?"Reactivar ":"Retroceder ")+o.codigo,
+    html:'<p>Estado actual: <b>'+esc(o.estado)+'</b>'+(o.ruta?' · en la hoja '+esc(o.ruta)+' (se retirará de ella)':'')+'</p><label class="tlc-l" for="tlc-dest">Volver a</label><select id="tlc-dest" class="tlc-sel">'+destinos.map(d=>'<option'+(d===elegido?' selected':'')+'>'+d+'</option>').join("")+'</select>'+
+      '<p style="margin-top:8px">Se borran las fechas de los pasos que se deshacen; la fila de la hoja no se elimina y todo queda en el historial.</p>',
+    campo:{label:"Motivo",placeholder:"Ej.: se embaló con los bultos equivocados",min:5},si:o.estado==="Anulada"?"Reactivar":"Retroceder",tono:"peligro"});
+  const sel=document.querySelector(".tlc #tlc-dest"); if(sel) sel.onchange=()=>{elegido=sel.value;};
+  const r=await p; if(!r.ok) return;
+  try{ const j=await api({action:"retroceder",codigo:o.codigo,estado:elegido,motivo:r.valor}); reemplazar(j.orden); estadosPrev&&(estadosPrev[o.codigo]=firma(j.orden)); renderLista(); renderImprimir(); toast("↩️ "+o.codigo+": "+o.estado+" → "+elegido); }
   catch(e){ toast(msgError(e)); }
 }
 function verConfig(o){ TLConfirm({titulo:"⚙️ Configuración · "+o.codigo,html:TLConfigHTML(o.config),si:"Cerrar",unBoton:true}); }

@@ -39,6 +39,23 @@
 <section class="view" id="v-nueva">
   <div class="banner-corr" id="banner-corr" hidden><b>✏️ Corrigiendo <span id="corr-cod"></span></b><span id="corr-nota"></span><button type="button" class="btn" id="corr-cancelar">Cancelar</button></div>
   <fieldset>
+    <legend>Tipo de orden</legend>
+    <div class="seg" id="tipo-orden">
+      <button type="button" data-v="Venta">Venta</button>
+      <button type="button" data-v="Cambio anticipado">🔁 Cambio anticipado</button>
+    </div>
+    <div id="box-oca" hidden>
+      <p class="nota">El equipo de reemplazo sale <b>antes</b> de que el cliente devuelva el que tiene falla. Se crea una <b>OCA</b> y en Devoluciones queda pendiente de registro hasta que llegue el equipo con falla (plazo: 15 días).</p>
+      <label class="f" for="oca-caso">Caso de Devoluciones (si ya existe)</label>
+      <input type="text" id="oca-caso" placeholder="Ej.: GAR-0023 · déjalo vacío si aún no hay caso" maxlength="12" style="text-transform:uppercase">
+      <label class="f" for="oca-modelo">Equipo con falla que devolverá el cliente</label>
+      <input type="text" id="oca-modelo" list="lista-modelos" placeholder="Modelo">
+      <datalist id="lista-modelos"></datalist>
+      <label class="f" for="oca-q">Cantidad</label>
+      <input type="tel" id="oca-q" inputmode="numeric" value="1" style="max-width:120px">
+    </div>
+  </fieldset>
+  <fieldset>
     <legend>Productos a alistar</legend>
     <input type="search" id="buscar" placeholder="Buscar por nombre o SKU">
     <div class="chips" id="cats"></div>
@@ -48,7 +65,13 @@
   </fieldset>
   <fieldset id="box-config" hidden>
     <legend>⚙️ Configuración de luminarias</legend>
-    <p class="nota" style="margin-top:0">Este pedido tiene luminarias de la línea profesional. Indica cómo deben configurarse los drivers; el almacén no podrá alistarlo hasta confirmar la configuración.</p>
+    <p class="nota" style="margin-top:0">Este pedido tiene luminarias de la línea profesional. ¿Necesitan una configuración personalizada de los drivers?</p>
+    <div class="seg" id="cfg-modo">
+      <button type="button" data-v="Personalizada">Personalizada</button>
+      <button type="button" data-v="De fábrica">De fábrica (no necesita)</button>
+    </div>
+    <div id="cfg-campos">
+    <p class="nota">El almacén no podrá alistarla hasta confirmar la configuración.</p>
     <label class="f" for="cfg-lugar">Lugar de instalación</label>
     <input type="text" id="cfg-lugar" placeholder="Ej.: Parque central de Huancayo, vía de acceso">
     <div class="row2">
@@ -62,6 +85,7 @@
     </div>
     <div class="cfg-tot" id="cfg-total">Total: 0 h</div>
     <div class="hint">El nivel 5 puede quedar sin cantidad: significa que dura hasta el amanecer.</div>
+    </div>
   </fieldset>
   <fieldset id="box-destino">
     <legend>Destino</legend>
@@ -74,6 +98,7 @@
   <fieldset>
     <legend>Pago y embalaje</legend>
     <div class="chips" id="pago"></div>
+    <p class="nota" id="pago-oca" hidden style="margin-top:0">Cambio anticipado: sin cobro.</p>
     <label class="f">Embalaje</label>
     <div class="seg" id="embalaje">
       <button type="button" data-v="Automático">Automático</button>

@@ -48,9 +48,10 @@
     op = op || {};
     const AGS = (op.agencias && op.agencias.length ? op.agencias : AGENCIAS_BASE);
     const AGENCIAS = AGS.map(a => a.n).concat(["Otra"]);
-    const S = { comprobante: "Boleta", destino: "Lima", entrega: "Delivery", entregaProv: "Recojo en agencia", agencia: AGENCIAS[0], aten: true };
+    const sinVenta = !!op.sinVenta;
+    const S = { comprobante: sinVenta ? "Sin venta" : "Boleta", destino: "Lima", entrega: "Delivery", entregaProv: "Recojo en agencia", agencia: AGENCIAS[0], aten: true };
     root.innerHTML =
-      '<fieldset><legend>1. Comprobante de pago</legend>' + seg("comprobante", ["Boleta", "Factura", "Ticket"], S.comprobante) +
+      '<fieldset><legend>1. Comprobante de pago</legend>' + (sinVenta ? '<div class="aviso" style="margin:0 0 10px">🔁 Envío por cambio o garantía: no se emite comprobante de venta.</div>' : seg("comprobante", ["Boleta", "Factura", "Ticket"], S.comprobante)) +
       '<div class="hint" id="fc-ticket-nota" hidden>Ticket de venta: el DNI es opcional, pero nos ayuda a registrarte como cliente.</div>' +
       '<div id="fc-boleta">' + campo("nombre", "Nombre y apellidos", 'type="text" autocomplete="name" placeholder="Ej.: Eduardo Ramírez Torres"') +
         campo("dni", "DNI o carné de extranjería", 'type="tel" inputmode="numeric" maxlength="12" placeholder="8 dígitos"') + '</div>' +
@@ -99,7 +100,8 @@
       });
       $("#fc-boleta").hidden = S.comprobante === "Factura";
       $("#fc-ticket-nota").hidden = S.comprobante !== "Ticket";
-      const lblDni = root.querySelector('label[for="fc-dni"]'); if (lblDni) lblDni.textContent = S.comprobante === "Ticket" ? "DNI (opcional)" : "DNI o carné de extranjería";
+      if (sinVenta) S.comprobante = "Sin venta";
+      const lblDni = root.querySelector('label[for="fc-dni"]'); if (lblDni) lblDni.textContent = (S.comprobante === "Ticket" || S.comprobante === "Sin venta") ? "DNI (opcional)" : "DNI o carné de extranjería";
       $("#fc-factura").hidden = S.comprobante !== "Factura";
       $("#fc-lima").hidden = S.destino !== "Lima";
       $("#fc-prov").hidden = S.destino !== "Provincia";
@@ -165,7 +167,7 @@
 
     function datos() {
       const f = S.comprobante === "Factura";
-      const c = { comprobante: S.comprobante, nombre: f ? v("razon") : v("nombre"), tipoDoc: f ? "RUC" : (S.comprobante === "Ticket" && !dig("dni") ? "" : "DNI"),
+      const c = { comprobante: S.comprobante, nombre: f ? v("razon") : v("nombre"), tipoDoc: f ? "RUC" : ((S.comprobante === "Ticket" || S.comprobante === "Sin venta") && !dig("dni") ? "" : "DNI"),
         doc: f ? dig("ruc") : dig("dni"), tel: dig("tel"), destino: S.destino,
         entrega: S.destino === "Provincia" ? S.entregaProv : S.entrega };
       if (S.destino === "Lima" && S.entrega === "Delivery") { c.distrito = v("distrito"); c.direccion = v("direccion"); c.referencia = v("referencia"); }
@@ -187,7 +189,7 @@
         if (!c.nombre) m("razon", "Ingresa la razón social.");
       } else {
         if (!c.nombre) m("nombre", "Ingresa nombre y apellidos.");
-        if ((c.comprobante !== "Ticket" || c.doc) && !/^\d{8,12}$/.test(c.doc)) m("dni", "Ingresa un DNI de 8 dígitos (o tu carné de extranjería).");
+        if (((c.comprobante !== "Ticket" && c.comprobante !== "Sin venta") || c.doc) && !/^\d{8,12}$/.test(c.doc)) m("dni", "Ingresa un DNI de 8 dígitos (o tu carné de extranjería).");
       }
       if (c.tel.length < 9) m("tel", "Ingresa un teléfono de 9 dígitos.");
       if (c.destino === "Lima" && c.entrega === "Delivery") {
@@ -215,7 +217,7 @@
     function cargar(c) {
       if (!c) return;
       if (!c.nombre) { if (c.destino) { S.destino = c.destino === "Provincia" ? "Provincia" : "Lima"; pintar(); } return; }   // solo destino sugerido
-      S.comprobante = c.comprobante === "Factura" ? "Factura" : (c.comprobante === "Ticket" ? "Ticket" : "Boleta");
+      S.comprobante = sinVenta ? "Sin venta" : (c.comprobante === "Factura" ? "Factura" : (c.comprobante === "Ticket" ? "Ticket" : "Boleta"));
       S.destino = c.destino === "Provincia" ? "Provincia" : "Lima";
       S.entrega = c.entrega === "Recojo en tienda" ? "Recojo en tienda" : "Delivery";
       const set = (id, val) => { if ($("#fc-" + id)) $("#fc-" + id).value = val || ""; };

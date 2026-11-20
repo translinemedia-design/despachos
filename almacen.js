@@ -40,8 +40,9 @@ function tarjeta(o,clase){
   const total=o.productos.reduce((a,x)=>a+(+x.q||0),0);
   return '<div class="cab"><span class="od">'+esc(o.codigo)+'</span><span class="quien">Vendedor: '+esc(o.vendedor)+'</span></div>'+
     '<div class="dest">'+esc(destino(o))+'</div>'+
-    '<div class="chips">'+(o.embalaje?'<span class="chip emb">'+esc(o.embalaje.toUpperCase())+'</span>':'')+
+    '<div class="chips">'+(o.tipo&&o.tipo!=="OD"?'<span class="chip tipo">🔁 '+(o.tipo==="OCA"?"CAMBIO ANTICIPADO":"ENVÍO POR GARANTÍA")+(o.caso?' · '+esc(o.caso):'')+'</span>':'')+(o.embalaje?'<span class="chip emb">'+esc(o.embalaje.toUpperCase())+'</span>':'')+
       (o.pago==="Contraentrega"?'<span class="chip cobrar">CONTRAENTREGA · COBRAR</span>':'')+
+      (PAGO_BLOQUEA.includes(o.pago)?'<span class="chip cobrar">⛔ FALTA EL PAGO: AÚN NO PUEDE SALIR</span>':'')+
       (o.clave?'<span class="chip emb">🔑 CLAVE AGENCIA: '+esc(o.clave)+'</span>':'')+
       (!o.c?'<span class="chip espera">Cliente aún no envía sus datos</span>':'')+
       (o.corregida?'<span class="chip cobrar">⚠️ PEDIDO CORREGIDO: REVISA LOS PRODUCTOS</span>':'')+
@@ -50,9 +51,11 @@ function tarjeta(o,clase){
     '<ul class="prod">'+o.productos.map(x=>'<li><span class="q">'+x.q+' ×</span><span>'+esc(x.p)+(x.s?'<small>'+esc(x.s)+'</small>':'')+'</span></li>').join("")+'</ul>'+
     '<div class="total">'+total+' producto'+(total===1?'':'s')+' en total</div>'+
     (o.obs?'<div class="obs">📝 '+esc(o.obs)+'</div>':'')+
-    (o.config?'<div class="cfg-box'+(o.config.hecho?' hecho':'')+'"><b>⚙️ Configuración de drivers '+(o.config.hecho?'✓ hecha por '+esc(o.config.hechoPor):'pendiente')+'</b>'+
+    (o.config&&o.config.fabrica?'<div class="cfg-box hecho"><b>⚙️ Va con la configuración de fábrica</b></div>':'')+
+    (o.config&&!o.config.fabrica?'<div class="cfg-box'+(o.config.hecho?' hecho':'')+'"><b>⚙️ Configuración de drivers '+(o.config.hecho?'✓ hecha por '+esc(o.config.hechoPor):'pendiente')+'</b>'+
       '<button type="button" class="alm-btn sec chico ver-cfg" style="margin:6px 0 0">Ver configuración</button></div>':'');
 }
+const PAGO_BLOQUEA=["Pendiente","Adelanto · saldo antes de despachar"];
 const bloqueada=o=>!!(o.sol&&o.sol.estado==="Solicitada");
 
 /* ---------- pintar ---------- */
@@ -96,7 +99,7 @@ function marcarNuevo(d,o){ if(previo&&!previo[o.codigo]) d.classList.add("nuevo-
 function verCfg(d,o){ const b=d.querySelector(".ver-cfg"); if(b) b.onclick=()=>TLConfirm({titulo:"⚙️ Configuración · "+o.codigo,html:TLConfigHTML(o.config),si:"Cerrar",unBoton:true}); }
 function cardAlistar(o){
   const d=document.createElement("div"); d.className="pedido"; marcarNuevo(d,o);
-  const falta=o.config&&!o.config.hecho;
+  const falta=o.config&&!o.config.fabrica&&!o.config.hecho;
   d.innerHTML=tarjeta(o)+'<div class="acc">'+(falta?'<button type="button" class="alm-btn azul ancho" data-a="cfg">⚙️ Confirmar configuración</button>':'')+
     '<button type="button" class="alm-btn ancho" data-a="ok" '+(falta||bloqueada(o)?'disabled':'')+'>✓ Ya está alistado</button></div>'+
     (falta?'<div class="quien">Primero confirma la configuración de las luminarias.</div>':'');
@@ -127,6 +130,7 @@ function cardImprimir(o){
   else if(!impresa) acc='<div class="bultos-box"><label>Etiquetas de flechas</label><div class="stepper"><button type="button" aria-label="Una menos">−</button><input type="tel" inputmode="numeric" value="'+(o.flechas||o.bultos*2)+'" aria-label="Flechas"><button type="button" aria-label="Una más">+</button></div></div>'+
     '<button type="button" class="alm-btn azul ancho" data-a="imp" '+(bloqueada(o)?'disabled':'')+'>🖨️ Imprimir '+o.bultos+' etiqueta'+(o.bultos>1?'s':'')+' + flechas</button>';
   else if(o.ruta) acc='<span class="chip" style="background:#DCEEFB;color:#14507E">🗂️ En la hoja de ruta '+esc(o.ruta)+' · falta aprobar la salida</span><button type="button" class="alm-btn sec" data-a="re">Reimprimir</button><button type="button" class="alm-btn sec" data-a="masfl">➕ Más flechas</button>';
+  else if(PAGO_BLOQUEA.includes(o.pago)) acc='<span class="quien" style="flex-basis:100%">Etiquetas listas. Podrá salir cuando el vendedor confirme el pago completo.</span><button type="button" class="alm-btn sec" data-a="re">Reimprimir</button><button type="button" class="alm-btn sec" data-a="masfl">➕ Más flechas</button>';
   else acc='<a class="alm-btn ancho" style="text-align:center;text-decoration:none" href="ruta.html">🗂️ Lista para la hoja de ruta</a><button type="button" class="alm-btn sec" data-a="re">Reimprimir</button><button type="button" class="alm-btn sec" data-a="masfl">➕ Más flechas</button>'+
     '<button type="button" class="deshacer" data-a="desp">Salió sin hoja de ruta (p. ej. recojo en tienda)</button>';
   d.innerHTML=tarjeta(o)+'<div class="acc">'+acc+'</div>'+(o.estado==="Embalado"&&!impresa?'<div class="acc"><button type="button" class="deshacer" data-a="atras">↩ Volver a "Alistados"</button></div>':'');

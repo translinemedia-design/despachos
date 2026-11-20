@@ -83,10 +83,10 @@
       return;
     }
     if(orden.c){ $("#p-aviso").hidden=false; $("#p-aviso").textContent="Ya registraste tus datos. Puedes revisarlos y corregirlos antes de que preparemos tu pedido.";
-      if(!form) form = FormCliente($("#form"), orden.c, { agencias: agenciasLista });
+      if(!form) form = FormCliente($("#form"), orden.c, { agencias: agenciasLista, sinVenta: orden.tipo && orden.tipo !== "OD" });
       $("#v-form").hidden=true; $("#v-ok").hidden=false; $("#editar").hidden=false; $("#ok-txt").textContent="Tus datos ya están registrados."; mostrarClave(); return; }
     $("#v-form").hidden=false; $("#v-ok").hidden=true;
-    if(!form) form = FormCliente($("#form"), orden.c || (orden.destinoPrev ? { destino: orden.destinoPrev } : null), { agencias: agenciasLista });
+    if(!form) form = FormCliente($("#form"), orden.c || (orden.destinoPrev ? { destino: orden.destinoPrev } : null), { agencias: agenciasLista, sinVenta: orden.tipo && orden.tipo !== "OD" });
   }
   $("#enviar").onclick = async ()=>{
     const c = form.validar(); if(!c){ toast("Revisa los campos marcados"); return; }

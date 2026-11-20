@@ -4,6 +4,7 @@
   /** Tabla de configuración de drivers (la usan Despachos y Alistar pedidos). */
   window.TLConfigHTML = function(k){
     if(!k) return "";
+    if(k.fabrica) return '<p class="cfg-datos">Va con la <b>configuración de fábrica</b>: no necesita configuración personalizada.</p>';
     return '<p class="cfg-datos"><b>Lugar:</b> '+esc(k.lugar)+'<br><b>Altura:</b> '+esc(k.altura)+' m · <b>Responsable:</b> '+esc(k.responsable)+'</p>'+
       '<table class="cfg-tabla"><tr><th>Nivel</th><th>Horas</th><th>Porcentaje</th></tr>'+
       (k.niveles||[]).map((n,i)=>'<tr><td>'+(i+1)+'</td><td>'+(n.h?esc(n.h):'Hasta el amanecer')+'</td><td>'+esc(n.p)+'%</td></tr>').join("")+'</table>'+
