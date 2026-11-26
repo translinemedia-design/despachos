@@ -1,0 +1,1669 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Transline · Devoluciones</title>
+<meta name="theme-color" content="#164B77">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" type="image/png" href="../icon-192.png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Transline">
+<script src="../config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --oscuro:#164B77; --azul:#2981C4; --celeste:#66C0DC; --fondo:#F4F2F4;
+  --texto:#1F2A36; --suave:#5B6775; --linea:#D5DEE7; --blanco:#FFFFFF;
+  --ok:#1E7B4A; --alerta:#B3261E;
+}
+*{box-sizing:border-box}
+html,body{overscroll-behavior-y:contain;margin:0;background:var(--fondo);color:var(--texto);font-family:'Poppins','Segoe UI',Arial,sans-serif;font-size:15px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+#app{min-height:100vh;padding-bottom:88px}
+header{background:var(--oscuro);color:#fff;padding:14px 18px 16px}
+header .fila{max-width:560px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+header img{height:26px;width:auto;display:block}
+header h1{margin:10px auto 0;max-width:560px;font-size:20px;font-weight:600}
+main{max-width:560px;margin:0 auto;padding:16px}
+.bloque{background:var(--blanco);border-radius:14px;padding:16px;margin-bottom:14px}
+.bloque h2{margin:0 0 12px;font-size:16px;font-weight:600;color:var(--oscuro)}
+label.campo{display:block;margin-bottom:12px}
+label.campo > span{display:block;font-size:13px;font-weight:500;color:var(--suave);margin-bottom:4px}
+input[type=text],input[type=tel],input[type=number],input[type=date],select,textarea{
+  width:100%;min-height:48px;border:1.5px solid var(--linea);border-radius:10px;padding:10px 12px;background:#fff}
+textarea{min-height:76px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--azul);box-shadow:0 0 0 3px rgba(41,129,196,.18)}
+.dos{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.chip{min-height:44px;padding:8px 14px;border:1.5px solid var(--azul);border-radius:999px;background:#fff;color:var(--oscuro);font-weight:500;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--oscuro);border-color:var(--oscuro);color:#fff}
+.grupo-titulo{font-size:13px;font-weight:500;color:var(--suave);margin:0 0 6px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;border:0;border-radius:12px;background:var(--azul);color:#fff;font-weight:600;font-size:16px;cursor:pointer;text-decoration:none}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.sec{background:#fff;color:var(--oscuro);border:1.5px solid var(--oscuro)}
+.btn + .btn{margin-top:10px}
+.aviso{padding:12px 14px;border-radius:10px;font-size:14px;margin-bottom:14px}
+.aviso.error{background:#FCE4E4;color:var(--alerta)}
+.aviso.info{background:#DCEEF6;color:var(--oscuro)}
+.aviso.ok{background:#DFF2E1;color:var(--ok)}
+.fotos-prev{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.fotos-prev img{width:72px;height:72px;object-fit:cover;border-radius:8px}
+.lista-casos{list-style:none;margin:0;padding:0}
+.lista-casos li{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
+.lista-casos .info{flex:1;min-width:0}
+.lista-casos .id{font-weight:700;color:var(--oscuro)}
+.lista-casos .meta{font-size:13px;color:var(--suave);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lista-casos button{min-height:44px;padding:8px 14px;border-radius:10px;border:0;background:var(--azul);color:#fff;font-weight:600;cursor:pointer}
+.datos{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}
+.datos dt{color:var(--suave)}
+.datos dd{margin:0;font-weight:500}
+.exito{text-align:center;padding:28px 16px}
+.exito .codigo{font-size:30px;font-weight:700;color:var(--oscuro);letter-spacing:1px;margin:6px 0}
+.vacio{text-align:center;color:var(--suave);padding:32px 12px}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--linea);display:flex;padding-bottom:env(safe-area-inset-bottom,0)}
+nav.tabs button{flex:1;min-height:64px;border:0;background:none;color:var(--suave);font-size:13px;font-weight:500;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+nav.tabs button[aria-current=page]{color:var(--oscuro);font-weight:700}
+nav.tabs svg{width:22px;height:22px}
+.badge{display:inline-block;min-width:20px;padding:0 6px;border-radius:999px;background:var(--alerta);color:#fff;font-size:12px;line-height:20px;margin-left:4px}
+.prev-etiquetas{display:flex;flex-direction:column;align-items:center;gap:10px;margin:12px 0}
+.prev-etiquetas .label{transform:scale(.82);transform-origin:top center;margin-bottom:-11mm;box-shadow:0 0 0 1px var(--linea);background:#fff}
+.oculto{display:none !important}
+header{padding-top:calc(14px + env(safe-area-inset-top,0px))}
+.usuario{display:flex;align-items:center;gap:10px;font-size:13px;color:#DCEEF6}
+.usuario button{border:1px solid rgba(255,255,255,.5);background:none;color:#fff;border-radius:999px;padding:5px 12px;font:inherit;font-size:12px;cursor:pointer}
+.login{max-width:380px;margin:30px auto;text-align:center}
+.login h2{color:var(--oscuro);margin:0 0 6px;font-size:20px}
+.login p{color:var(--suave);margin:0 0 18px}
+.login input{width:100%;min-height:58px;font-size:28px;letter-spacing:10px;text-align:center;border:1.5px solid var(--linea);border-radius:12px;margin-bottom:12px}
+.borrador{display:flex;flex-wrap:wrap;align-items:center;gap:10px;justify-content:space-between}
+.borrador .btns{display:flex;gap:8px}
+.borrador button{min-height:40px;padding:6px 14px;border-radius:10px;border:0;background:var(--oscuro);color:#fff;font-weight:600;cursor:pointer;font:inherit;font-size:14px}
+.borrador button.sec{background:#fff;color:var(--oscuro);border:1.5px solid var(--oscuro)}
+.p-ok{background:#DFF2E1;color:#1E7B4A}
+.botones-fila{display:flex;flex-direction:column;gap:6px}
+.lista-casos button.sec{background:#fff;color:var(--oscuro);border:1.5px solid var(--linea);font-weight:500}
+form:not(.modo-aviso) .solo-aviso{display:none !important}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700;margin-top:4px}
+.p-atr{background:#FCE4E4;color:#B3261E}
+.p-hoy{background:#FFF1CC;color:#7A5600}
+.p-man{background:#DCEEF6;color:#164B77}
+.p-prox{background:#EEF1F5;color:#164B77}
+.p-sin{background:#EEF1F5;color:#5B6775}
+.acciones-resumen{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 14px}
+.acciones-resumen .btn{min-height:48px;font-size:14px;margin:0}
+form.modo-aviso .solo-almacen{display:none !important}
+.dup-caja{background:#FFF1CC;color:#5C4400;border-radius:12px;padding:12px 14px;margin:-4px 0 12px;font-size:14px}
+.dup-caja strong{display:block;margin-bottom:6px;color:#3D2E00}
+.dup-caja .dup-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid #F0DC9A}
+.dup-caja .dup-item:first-of-type{border-top:0}
+.dup-caja button.dup-recibir{min-height:40px;padding:6px 12px;border:0;border-radius:10px;background:var(--oscuro);color:#fff;font-weight:600;cursor:pointer;white-space:nowrap}
+.dup-caja button.dup-no{margin-top:8px;border:0;background:none;color:#5C4400;text-decoration:underline;cursor:pointer;padding:4px 0;font:inherit}
+.modo-ayuda{font-size:13px;color:var(--suave);margin:0}
+.btn.wa{background:#1F8F55}
+.esperado{font-size:13px;color:var(--suave);margin:-4px 0 10px}
+.r-equipo{border-top:1px solid var(--linea);padding-top:14px;margin-top:14px}
+.r-equipo:first-child{border-top:0;padding-top:0;margin-top:0}
+.r-equipo h3{margin:0 0 4px;font-size:15px;color:var(--oscuro)}
+.alerta-caja{background:#FCE4E4;color:var(--alerta);border-radius:10px;padding:10px 12px;font-size:14px;font-weight:600;margin-bottom:10px}
+nav.tabs button{font-size:12px}
+.tipo-desc{background:#DCEEF6;color:var(--oscuro);border-radius:10px;padding:10px 12px;font-size:14px;margin:2px 0 8px}
+.tipo-guia{font-size:13px;color:var(--suave);margin:0}
+.equipo{border-top:1px solid var(--linea);padding-top:14px;margin-top:4px}
+.equipo:first-of-type{border-top:0;padding-top:0;margin-top:0}
+.equipo-cab{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.equipo-cab strong{color:var(--oscuro);font-size:14px}
+.btn-quitar{min-height:40px;padding:6px 12px;border:1.5px solid var(--linea);border-radius:10px;background:#fff;color:var(--alerta);font-weight:500;cursor:pointer}
+.btn-agregar{width:100%;min-height:48px;border:1.5px dashed var(--azul);border-radius:12px;background:#fff;color:var(--azul);font-weight:600;cursor:pointer;margin-top:4px}
+.kit-ayuda{font-size:13px;color:var(--suave);margin:-2px 0 8px}
+.alerta-txt{color:var(--alerta);font-weight:600}
+.link-caso{border:0;background:none;color:var(--azul);font-weight:600;padding:0 6px 0 0;cursor:pointer;text-decoration:underline}
+
+/* ---------- etiqueta 100 x 60 mm ---------- */
+.label{width:100mm;height:60mm;box-sizing:border-box;padding:3.5mm 4mm;display:grid;grid-template-columns:37mm 1fr;column-gap:4mm;color:#000;background:#fff;overflow:hidden;font-family:'Poppins',Arial,sans-serif}
+.label .qr{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.2mm}
+.label .qr img{width:37mm;height:37mm;display:block;image-rendering:pixelated}
+.label .qr small{font-size:2.5mm;line-height:1.1;text-align:center}
+.label .der{display:flex;flex-direction:column;min-width:0}
+.label .logo{height:5.5mm;width:auto;align-self:flex-start;margin-bottom:1.5mm}
+.label .cab-et{display:flex;align-items:center;gap:2mm;margin-bottom:1.5mm}
+.label .cab-et .logo{margin-bottom:0}
+.label .tipo-et{border:.45mm solid #000;font-weight:700;font-size:2.7mm;letter-spacing:.25mm;padding:.4mm 1.3mm;border-radius:.6mm;white-space:nowrap;line-height:1.2}
+.label .gar{font-size:9.5mm;font-weight:700;line-height:1;letter-spacing:.2mm}
+.label .bulto{margin-top:1.6mm;font-size:5.6mm;font-weight:700;line-height:1.1;border:.5mm solid #000;border-radius:1.2mm;padding:.6mm 2mm;align-self:flex-start}
+.label .txt{font-size:3.2mm;line-height:1.25;margin-top:1.4mm;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.label .pie{margin-top:auto;font-size:2.7mm;font-weight:600;border-top:.3mm solid #000;padding-top:.8mm}
+
+#print-area{display:none}
+@media print{
+  @page{size:100mm 60mm;margin:0}
+  html,body{background:#fff}
+  #app{display:none !important}
+  #print-area{display:block}
+  #print-area .label{break-after:page;page-break-after:always}
+  #print-area .label:last-child{break-after:auto;page-break-after:auto}
+}
+/* OCA y OC: pendientes de registro y orden de cambio */
+.oca{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;border-left:6px solid #7C3AED}
+.oca.vencida{border-left-color:#C0392B;background:#FFF5F5}
+.oca .cod{font-weight:700;font-size:17px}
+.oca .meta{font-size:13px;color:var(--suave);margin-top:2px}
+.oca .dev{font-size:15px;margin-top:6px}
+.oca .alerta-txt{display:block;margin-top:6px}
+.oca .btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.oca .btns button{min-height:44px;padding:0 14px;border-radius:10px;font:inherit;font-weight:600;border:1.5px solid #7C3AED;background:#7C3AED;color:#fff;cursor:pointer}
+.oca .btns button.sec{background:#fff;color:#7C3AED}
+.aviso-oca{background:#F3EEFE;border:1.5px solid #C4B5FD;color:#4C2A85;border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:15px}
+.aviso-oca button{margin-top:8px;min-height:42px;padding:0 14px;border-radius:10px;border:1.5px solid #7C3AED;background:#7C3AED;color:#fff;font:inherit;font-weight:600;cursor:pointer}
+.vmodal .oca{margin:8px 0 0}
+.vmodal-fondo{position:fixed;inset:0;z-index:90;background:rgba(10,20,35,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+.vmodal{background:#fff;border-radius:16px;padding:20px;width:100%;max-width:440px}
+.vmodal h2{margin:0 0 8px;font-size:19px}
+.vmodal p{margin:0 0 12px;color:var(--suave);font-size:15px}
+.vmodal label{display:block;font-size:13px;font-weight:600;color:var(--suave);margin:8px 0 4px}
+.vmodal select,.vmodal input,.vmodal textarea{width:100%;min-height:46px;font:inherit;font-size:16px;border:1.5px solid var(--linea);border-radius:10px;padding:8px 10px;background:#fff}
+.vmodal .bb{display:flex;gap:10px;margin-top:16px}
+.vmodal .bb button{flex:1;min-height:52px;border-radius:12px;font:inherit;font-weight:700;font-size:16px;cursor:pointer;border:2px solid var(--linea);background:#fff}
+.vmodal .bb .si{background:#1FA855;border-color:#1FA855;color:#fff}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="fila">
+      <img src="data:image/png;base64,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" alt="Transline">
+      <div class="usuario oculto" id="usuario"><span id="u-nombre"></span><button type="button" id="btn-salir">← Inicio</button></div>
+    </div>
+    <h1 id="titulo">Registrar devolución</h1>
+  </header>
+  <main>
+    <div id="msg"></div>
+
+    <!-- INGRESO CON PIN -->
+    <section id="v-login" class="oculto">
+      <div class="bloque login">
+        <h2>Ingresa tu PIN</h2>
+        <p>Cada persona tiene su propio PIN. Si no lo tienes, pídelo a la administración.</p>
+        <input type="password" id="pin" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••">
+        <button class="btn" type="button" id="btn-entrar">Entrar</button>
+      </div>
+    </section>
+
+    <!-- SERVICIO TÉCNICO -->
+    <section id="v-revision" class="oculto">
+      <div class="aviso info">Casos recibidos que esperan revisión técnica, los más urgentes primero. Ábrelos para pasarlos a «En revisión», registrar el diagnóstico y cerrarlos con su solución.</div>
+      <ul class="lista-casos" id="lista-revision"></ul>
+    </section>
+
+    <!-- REGISTRAR -->
+    <section id="v-registrar">
+      <div class="aviso-oca oculto" id="aviso-oca"></div>
+      <div class="aviso info borrador oculto" id="borrador-aviso">
+        <span id="borrador-txt">Tienes un registro sin terminar.</span>
+        <span class="btns"><button type="button" id="borrador-continuar">Continuar</button><button type="button" class="sec" id="borrador-descartar">Descartar</button></span>
+      </div>
+      <form id="form" autocomplete="off" novalidate>
+        <div class="bloque" id="bloque-modo">
+          <h2>¿Quién registra?</h2>
+          <div class="chips" data-grupo="modo" data-unico="1"></div>
+          <p class="modo-ayuda" id="modo-ayuda"></p>
+        </div>
+
+        <div class="bloque">
+          <h2>Tipo de caso</h2>
+          <div class="chips" data-grupo="tipo" data-unico="1"></div>
+          <div class="tipo-desc" id="tipo-desc"></div>
+          <p class="tipo-guia">Pregunta clave: ¿el equipo tiene una falla de fábrica? Si la tiene, es Garantía. Si no, y quiere su dinero, es Devolución. Si no, y quiere otro equipo, es Cambio.</p>
+        </div>
+
+        <div class="bloque">
+          <h2>Equipos que regresan</h2>
+          <div id="equipos"></div>
+          <button type="button" class="btn-agregar" id="btn-agregar-equipo">+ Agregar otro modelo</button>
+        </div>
+
+        <div class="bloque">
+          <h2>Cliente</h2>
+          <label class="campo"><span>Nombre o razón social</span><input type="text" name="cliente" required autocapitalize="characters" style="text-transform:uppercase"></label>
+          <div id="dup-aviso" class="oculto"></div>
+          <div class="dos">
+            <label class="campo"><span>Teléfono</span><input type="tel" name="telefono" inputmode="tel"></label>
+            <label class="campo"><span>Vendedor</span><select name="vendedor"></select></label>
+          </div>
+          <div class="dos">
+            <label class="campo"><span>Boleta o factura</span><input type="text" name="comprobante"></label>
+            <label class="campo"><span>Fecha de compra</span><input type="date" name="fechaCompra"></label>
+          </div>
+        </div>
+
+        <div class="bloque solo-almacen" id="bloque-recepcion">
+          <h2>Recepción en almacén</h2>
+          <p class="grupo-titulo">Cómo llegó</p>
+          <div class="chips" data-grupo="comoLlego" data-unico="1"></div>
+          <p class="grupo-titulo">Estado de llegada</p>
+          <div class="chips" data-grupo="estadoLlegada" data-unico="1"></div>
+          <div class="dos">
+            <label class="campo"><span>Ubicación</span><select name="ubicacion"></select></label>
+            <label class="campo"><span>Recibido por</span><select name="recibidoPor"></select></label>
+          </div>
+          <label class="campo"><span>Fotos del equipo y del empaque</span><input type="file" id="fotos" accept="image/*" multiple></label>
+          <div class="fotos-prev" id="fotos-prev"></div>
+        </div>
+
+        <div class="bloque solo-aviso" id="bloque-envio">
+          <h2>Envío del cliente</h2>
+          <p class="grupo-titulo">¿Cómo enviará el equipo?</p>
+          <div class="chips" data-grupo="envioModo" data-unico="1"></div>
+          <div id="envio-agencia" class="oculto">
+            <label class="campo"><span>Agencia</span><select name="agencia"></select></label>
+            <div class="dos">
+              <label class="campo"><span>Fecha en que el cliente envía</span><input type="date" name="fechaEnvio"></label>
+              <label class="campo"><span>Guía o clave de la agencia</span><input type="text" name="guiaAgencia"></label>
+            </div>
+          </div>
+          <div id="envio-fecha" class="oculto">
+            <label class="campo"><span>¿Cuándo llegará? (aproximado)</span><input type="date" name="fechaLlegada"></label>
+          </div>
+          <div class="tipo-desc oculto" id="envio-estimado"></div>
+        </div>
+
+        <div class="bloque">
+          <h2>Cambio anticipado</h2>
+          <p class="grupo-titulo">¿Ya se envió un reemplazo al cliente?</p>
+          <div class="chips" data-grupo="cambioAnticipado" data-unico="1"></div>
+          <div id="reemplazo" class="oculto">
+            <div class="dos">
+              <label class="campo"><span>Fecha de envío</span><input type="date" name="fechaReemplazo"></label>
+              <label class="campo"><span>Guía N°</span><input type="text" name="guiaReemplazo"></label>
+            </div>
+            <label class="campo"><span>Serie del equipo enviado</span><input type="text" name="serieReemplazo"></label>
+          </div>
+        </div>
+
+        <button class="btn" type="submit" id="btn-guardar">Guardar devolución</button>
+      </form>
+    </section>
+
+    <!-- EXITO -->
+    <section id="v-exito" class="oculto">
+      <div class="bloque exito">
+        <div id="ex-titulo">Devolución registrada</div>
+        <div class="codigo" id="ex-codigo"></div>
+        <div id="ex-detalle" style="color:var(--suave)"></div>
+        <div id="ex-fotos" style="margin-top:10px;font-size:14px"></div>
+      </div>
+      <button class="btn wa" type="button" id="ex-whatsapp">Avisar al grupo de WhatsApp</button>
+      <button class="btn sec" type="button" id="ex-copiar">Copiar mensaje</button>
+      <button class="btn" type="button" id="ex-imprimir">Imprimir etiquetas</button>
+      <button class="btn sec" type="button" id="ex-otro">Registrar otro caso</button>
+    </section>
+
+    <!-- POR RECIBIR -->
+    <section id="v-porrecibir" class="oculto">
+      <div class="aviso info">Devoluciones avisadas por los vendedores que aún no llegan. Cuando llegue el equipo, ábrelas y confirma la recepción.</div>
+      <div class="acciones-resumen">
+        <button class="btn wa" type="button" id="btn-resumen-wa">Resumen del día por WhatsApp</button>
+        <button class="btn sec" type="button" id="btn-resumen-copiar">Copiar resumen</button>
+      </div>
+      <ul class="lista-casos" id="lista-porrecibir"></ul>
+    </section>
+
+    <!-- RECIBIR -->
+    <section id="v-recibir" class="oculto">
+      <div class="bloque">
+        <h2 id="r-titulo"></h2>
+        <div id="r-info"></div>
+      </div>
+      <div class="bloque">
+        <h2>Equipos que llegaron</h2>
+        <div id="r-equipos"></div>
+      </div>
+      <div class="bloque">
+        <h2>Recepción en almacén</h2>
+        <p class="grupo-titulo">Cómo llegó</p>
+        <div class="chips" data-grupo="rComoLlego" data-unico="1"></div>
+        <p class="grupo-titulo">Estado de llegada</p>
+        <div class="chips" data-grupo="rEstadoLlegada" data-unico="1"></div>
+        <div class="dos">
+          <label class="campo"><span>Ubicación</span><select id="r-ubicacion"></select></label>
+          <label class="campo"><span>Recibido por</span><select id="r-recibido"></select></label>
+        </div>
+        <label class="campo"><span>Fotos del equipo y del empaque</span><input type="file" id="r-fotos" accept="image/*" multiple></label>
+        <div class="fotos-prev" id="r-fotos-prev"></div>
+      </div>
+      <button class="btn" type="button" id="r-confirmar">Confirmar recepción</button>
+    </section>
+
+    <!-- POR IMPRIMIR -->
+    <section id="v-pendientes" class="oculto">
+      <div class="aviso info">Casos registrados que aún no tienen etiquetas. Ábrelos desde la computadora conectada a la etiquetera.</div>
+      <ul class="lista-casos" id="lista-pendientes"></ul>
+      <button class="btn sec" type="button" id="btn-prueba">Imprimir etiqueta de prueba</button>
+    </section>
+
+    <!-- BUSCAR -->
+    <section id="v-buscar" class="oculto">
+      <label class="campo"><span>N° de caso, cliente o modelo</span><input type="text" id="q" placeholder="Ej. GAR-0007 o Ozzo"></label>
+      <ul class="lista-casos" id="lista-buscar"></ul>
+    </section>
+
+    <!-- CASO -->
+    <section id="v-caso" class="oculto">
+      <div class="bloque">
+        <h2 id="c-titulo"></h2>
+        <dl class="datos" id="c-datos"></dl>
+        <button class="btn sec oculto" type="button" id="c-corregir" style="margin-top:10px">✏️ Corregir datos</button>
+      </div>
+      <div class="bloque" id="c-actualizar">
+        <h2>Actualizar</h2>
+        <div id="c-zona-tecnico">
+          <p class="grupo-titulo">Estado</p>
+          <div class="chips" data-grupo="estado" data-unico="1"></div>
+          <label class="campo"><span>Diagnóstico técnico</span><textarea id="c-diagnostico" rows="3" placeholder="Qué se revisó y qué se encontró"></textarea></label>
+          <label class="campo"><span>Solución aplicada</span><select id="c-solucion"></select></label>
+        </div>
+        <div id="c-zona-almacen">
+          <label class="campo"><span>Ubicación</span><select id="c-ubicacion"></select></label>
+        </div>
+        <button class="btn" type="button" id="c-guardar">Guardar cambios</button>
+      </div>
+      <a class="btn sec oculto" id="c-fotos" href="#" target="_blank" rel="noopener">Ver fotos</a>
+      <div class="bloque" id="c-compartir">
+        <h2>Compartir seguimiento</h2>
+        <p class="modo-ayuda" style="margin-bottom:12px">Enlace de solo lectura para el cliente, vendedores o jefatura. Muestra el avance del caso, sin datos internos.</p>
+        <button class="btn wa" type="button" id="c-compartir-wa">Enviar por WhatsApp</button>
+        <button class="btn sec" type="button" id="c-compartir-copiar">Copiar enlace</button>
+      </div>
+      <button class="btn oculto" type="button" id="c-recibir">Recibir ahora</button>
+      <button class="btn sec" type="button" id="c-imprimir">Imprimir etiquetas</button>
+    </section>
+
+    <!-- IMPRIMIR -->
+    <section id="v-imprimir" class="oculto">
+      <div class="bloque">
+        <h2 id="i-titulo"></h2>
+        <label class="campo"><span>Qué imprimir</span><select id="i-cual"></select></label>
+        <div class="prev-etiquetas" id="i-prev"></div>
+      </div>
+      <button class="btn" type="button" id="i-imprimir">Imprimir</button>
+      <div id="i-despues" class="oculto" style="margin-top:12px">
+        <div class="aviso ok" id="i-despues-txt"></div>
+        <button class="btn sec" type="button" id="i-volver">Volver a «Por imprimir»</button>
+      </div>
+    </section>
+    <!-- PENDIENTES DE REGISTRO (OCA) -->
+    <section id="v-pendreg" class="oculto">
+      <div class="aviso info">Cambios anticipados (OCA): el reemplazo ya salió y falta que llegue el equipo con falla del cliente. Cuando llegue, toca <b>Registrar cambio</b>: el formulario viene lleno y queda enlazado a la OCA. En rojo, los que pasaron de 15 días.</div>
+      <div id="lista-pendreg"></div>
+    </section>
+  </main>
+
+  <nav class="tabs" aria-label="Secciones">
+    <button type="button" data-tab="registrar" aria-current="page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Registrar</button>
+    <button type="button" data-tab="revision">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg><span>Revisión<span id="badge-t" class="badge oculto"></span></span></button>
+    <button type="button" data-tab="porrecibir">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg><span>Por recibir<span id="badge-r" class="badge oculto"></span></span></button>
+    <button type="button" data-tab="pendientes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg><span>Por imprimir<span id="badge" class="badge oculto"></span></span></button>
+    <button type="button" data-tab="pendreg" class="oculto">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg><span>Cambios<span id="badge-oca" class="badge oculto"></span></span></button>
+    <button type="button" data-tab="buscar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Buscar</button>
+  </nav>
+</div>
+
+<div id="print-area"></div>
+
+<script>
+let URL_APP = '';
+const API_URL = (window.TL_CONFIG && (window.TL_CONFIG.DEVOLUCIONES_API_URL || window.TL_CONFIG.API_URL)) || '';
+const EN_GOOGLE = /^https:\/\/script\.google\.com\/.+\/exec$/.test(API_URL);
+let SESION = null;   // { pin, nombre, rol }
+const ROLES = { VENDEDOR: 'Vendedor', ALMACEN: 'Almacén', TECNICO: 'Servicio técnico', ADMIN: 'Administrador' };
+const LOGO_BN = 'data:image/png;base64,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';
+const ESTADOS_LLEGADA = ['Con caja', 'Sin caja', 'Caja dañada'];
+const MODOS = ['Aviso del vendedor', 'Llegó al almacén'];
+let ultimoMensaje = '';
+let fotosRecibir = [];
+let grupoRecibir = [];
+
+let LISTAS = null;
+let fotosListas = [];
+let casoActual = null;
+let ultimoRegistrado = null;
+
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function run(fn, ...args) {
+  if (!EN_GOOGLE) throw new Error('Vista previa sin conexión con la hoja.');
+  let r;
+  try {
+    const resp = await fetch(API_URL, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ fn: fn, args: args, pin: SESION ? SESION.pin : '' })
+    });
+    r = await resp.json();
+  } catch (e) { throw new Error('Sin conexión. Revisa el internet e intenta de nuevo.'); }
+  if (!r.ok) {
+    if (r.error === 'pin' && fn !== 'login') cerrarSesion('Tu PIN ya no es válido. Ingresa de nuevo.');
+    throw new Error(r.error === 'pin' ? 'PIN incorrecto.' : r.error);
+  }
+  return r.data;
+}
+
+/* ---------- sesión y roles ---------- */
+/* Una persona puede tener varios roles (p. ej. Servicio técnico y Almacén), según sus tarjetas en el portal. */
+function rolesSesion() { return SESION ? (SESION.roles || String(SESION.rol || '').split(',').map((x) => x.trim()).filter(String)) : []; }
+function tiene(r) { return rolesSesion().indexOf(r) >= 0; }
+function soloVendedor() { return tiene(ROLES.VENDEDOR) && !tiene(ROLES.ALMACEN) && !tiene(ROLES.ADMIN); }
+function almacenSinAdmin() { return tiene(ROLES.ALMACEN) && !tiene(ROLES.ADMIN); }
+function puede(accion) {
+  const A = ROLES.ADMIN;
+  const mapa = {
+    registrar: [ROLES.VENDEDOR, ROLES.ALMACEN, A], almacen: [ROLES.ALMACEN, A],
+    revision: [ROLES.TECNICO, A], tecnico: [ROLES.TECNICO, A], buscar: [ROLES.VENDEDOR, ROLES.ALMACEN, ROLES.TECNICO, A]
+  };
+  return (mapa[accion] || []).some(tiene);
+}
+function cerrarSesion(texto) {
+  try { localStorage.removeItem('tl_portal'); } catch (e) {}
+  SESION = null;
+  location.replace('../');
+}
+function mostrarLogin(texto) {
+  $('#usuario').classList.add('oculto');
+  document.querySelector('nav.tabs').classList.add('oculto');
+  mostrar('login', 'Transline · Devoluciones');
+  mensaje(texto ? 'error' : '', texto || '');
+  $('#pin').value = '';
+  setTimeout(() => $('#pin').focus(), 50);
+}
+async function entrar() {
+  const pin = $('#pin').value.trim();
+  if (!/^\d{4,8}$/.test(pin)) { mensaje('error', 'El PIN tiene entre 4 y 8 números.'); return; }
+  const btn = $('#btn-entrar'); btn.disabled = true; btn.textContent = 'Verificando…';
+  SESION = { pin: pin };
+  try {
+    const u = await run('login');
+    SESION = { pin: pin, nombre: u.nombre, rol: u.rol, roles: u.roles };
+    try { localStorage.setItem('tl_sesion', JSON.stringify(SESION)); } catch (e) {}
+    mensaje('', '');
+    await arrancar();
+  } catch (err) {
+    SESION = null;
+    mensaje('error', err.message || 'No se pudo ingresar.');
+  } finally { btn.disabled = false; btn.textContent = 'Entrar'; }
+}
+function aplicarRol() {
+  $('#u-nombre').textContent = SESION.nombre + ' · ' + SESION.rol;
+  $('#usuario').classList.remove('oculto');
+  const nav = document.querySelector('nav.tabs');
+  nav.classList.remove('oculto');
+  const vis = { registrar: puede('registrar'), revision: puede('revision'), porrecibir: puede('almacen'), pendientes: puede('almacen'), buscar: true, pendreg: puede('almacen') && !!DESP_API };
+  nav.querySelectorAll('button').forEach((b) => b.classList.toggle('oculto', !vis[b.dataset.tab]));
+}
+function modosPermitidos() { return soloVendedor() ? [MODOS[0]] : MODOS; }
+
+// Listas de muestra para la vista previa fuera de Google (en la app real se leen de la hoja «Listas»)
+const LISTAS_MUESTRA = {
+  agencias: [{ nombre: 'Shalom', min: 3, max: 4 }, { nombre: 'Marvisur', min: 2, max: 3 }, { nombre: 'Móvil Tours', min: 1, max: 1 }],
+  modelos: ['(se cargan de la hoja Listas)'], vendedores: ['(se cargan de la hoja Listas)'],
+  tipos: ['Garantía', 'Devolución', 'Cambio'],
+  tiposDesc: {
+    'Garantía': 'El equipo falló por un defecto de fábrica, dentro del plazo de garantía. Ej.: no enciende, la batería no carga, la luz parpadea.',
+    'Devolución': 'El equipo funciona bien, pero el cliente lo regresa y quiere su dinero o un crédito. Ej.: compró de más, se canceló la obra.',
+    'Cambio': 'El equipo no tiene falla de fábrica y el cliente quiere otro producto. Ej.: se envió el modelo equivocado, quiere otra potencia o llegó dañado por la agencia.'
+  }, fallas: ['(se cargan de la hoja Listas)'],
+  estados: ['Registrado', 'En revisión', 'Resuelto', 'Rechazado'],
+  comoLlego: ['Cliente lo trae', 'Transportista', 'Agencia (provincia)'],
+  recibidores: ['Vilma', 'Juan', 'Jorge', 'Arturo'], ubicaciones: ['Zona de devoluciones'],
+  kits: { '(se cargan de la hoja Listas)': ['Reflector', 'Panel solar', 'Cable extensor panel-reflector', 'Soporte de panel', 'Control remoto', 'Kit de pernos'] }
+};
+
+function mensaje(tipo, texto) {
+  $('#msg').innerHTML = texto ? '<div class="aviso ' + tipo + '">' + esc(texto) + '</div>' : '';
+  if (texto) window.scrollTo(0, 0);
+}
+
+function mostrar(vista, titulo) {
+  ['login', 'revision', 'registrar', 'exito', 'porrecibir', 'recibir', 'pendientes', 'buscar', 'caso', 'imprimir', 'pendreg'].forEach((v) => {
+    $('#v-' + v).classList.toggle('oculto', v !== vista);
+  });
+  $('#titulo').textContent = titulo;
+  const tab = { revision: 'revision', registrar: 'registrar', exito: 'registrar', porrecibir: 'porrecibir', recibir: 'porrecibir', pendientes: 'pendientes', imprimir: 'pendientes', buscar: 'buscar', caso: 'buscar', pendreg: 'pendreg' }[vista];
+  document.querySelectorAll('nav.tabs button').forEach((b) => {
+    if (b.dataset.tab === tab) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+  });
+  if (vista === 'registrar') { pintarAvisoOCA(); if (DESP_API && puede('almacen') && !ocaLista.length) cargarOCA(true); }
+  window.scrollTo(0, 0);
+}
+
+/* ---------- chips ---------- */
+function llenarChips(grupo, opciones, seleccion) {
+  const cont = document.querySelector('.chips[data-grupo="' + grupo + '"]');
+  cont.innerHTML = opciones.map((o) =>
+    '<button type="button" class="chip" aria-pressed="' + (seleccion === o ? 'true' : 'false') + '" data-valor="' + esc(o) + '">' + esc(o) + '</button>'
+  ).join('');
+}
+document.addEventListener('click', (e) => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  const cont = chip.parentElement;
+  if (cont.dataset.unico) {
+    cont.querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', 'false'));
+    chip.setAttribute('aria-pressed', 'true');
+  } else {
+    chip.setAttribute('aria-pressed', chip.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+  }
+  if (cont.dataset.grupo === 'tipo') pintarDescTipo();
+  if (cont.dataset.grupo === 'modo') aplicarModo();
+  if (cont.dataset.grupo === 'envioModo') actualizarEnvio();
+  if (cont.dataset.grupo === 'cambioAnticipado') {
+    $('#reemplazo').classList.toggle('oculto', chip.dataset.valor !== 'Sí');
+  }
+});
+function pintarDescTipo() {
+  const el = $('#tipo-desc');
+  const tipo = valorChips('tipo');
+  const desc = (LISTAS && LISTAS.tiposDesc && LISTAS.tiposDesc[tipo]) || '';
+  el.textContent = desc;
+  el.classList.toggle('oculto', !desc);
+}
+function valorChips(grupo) {
+  const sel = [...document.querySelectorAll('.chips[data-grupo="' + grupo + '"] .chip[aria-pressed="true"]')].map((c) => c.dataset.valor);
+  return document.querySelector('.chips[data-grupo="' + grupo + '"]').dataset.unico ? (sel[0] || '') : sel;
+}
+
+function opciones(sel, lista, vacio) {
+  sel.innerHTML = (vacio ? '<option value="">' + esc(vacio) + '</option>' : '') + lista.map((o) => '<option>' + esc(o) + '</option>').join('');
+}
+
+/* ---------- formulario ---------- */
+/** Almacén: «Recibido por» es la persona que ingresó con su PIN. Administrador: elige de la lista. */
+function fijarRecibidoPor(sel) {
+  const lista = (LISTAS.recibidores || []).slice();
+  const esAlmacen = almacenSinAdmin();
+  if (esAlmacen && lista.indexOf(SESION.nombre) < 0) lista.push(SESION.nombre);
+  opciones(sel, lista, 'Elige quién recibe');
+  if (esAlmacen) sel.value = SESION.nombre;
+  else { try { const r = localStorage.getItem('tl_recibido') || ''; if (lista.indexOf(r) >= 0) sel.value = r; } catch (e) {} }
+  sel.closest('label').classList.toggle('oculto', !!esAlmacen);
+}
+
+function prepararFormulario() {
+  const f = $('#form');
+  f.reset();
+  let modoGuardado = MODOS[0];
+  try { modoGuardado = localStorage.getItem('tl_modo') || MODOS[0]; } catch (e) {}
+  const modos = modosPermitidos();
+  llenarChips('modo', modos, modos.indexOf(modoGuardado) >= 0 ? modoGuardado : modos[0]);
+  $('#bloque-modo').classList.toggle('oculto', modos.length === 1);
+  llenarChips('tipo', LISTAS.tipos, LISTAS.tipos[0]);
+  pintarDescTipo();
+  llenarChips('comoLlego', LISTAS.comoLlego, '');
+  llenarChips('estadoLlegada', ESTADOS_LLEGADA, '');
+  llenarChips('cambioAnticipado', ['No', 'Sí'], 'No');
+  $('#reemplazo').classList.add('oculto');
+  dupDescartado = false;
+  $('#equipos').innerHTML = '';
+  agregarEquipo();
+  aplicarModo();
+  refrescarPendientes().then(pintarDuplicados);
+  opciones(f.vendedor, LISTAS.vendedores, 'Elige el vendedor');
+  const esVendedor = soloVendedor();
+  if (esVendedor && LISTAS.vendedores.indexOf(SESION.nombre) < 0) f.vendedor.insertAdjacentHTML('beforeend', '<option>' + esc(SESION.nombre) + '</option>');
+  if (esVendedor) f.vendedor.value = SESION.nombre;
+  f.vendedor.closest('label').classList.toggle('oculto', !!esVendedor);
+  llenarChips('envioModo', LISTAS.comoLlego, '');
+  opciones(f.agencia, (LISTAS.agencias || []).map((a) => a.nombre), 'Elige la agencia');
+  f.fechaEnvio.value = isoHoy();
+  actualizarEnvio();
+  opciones(f.ubicacion, LISTAS.ubicaciones || [], 'Elige la ubicación');
+  if ((LISTAS.ubicaciones || []).length === 1) f.ubicacion.value = LISTAS.ubicaciones[0];
+  fijarRecibidoPor(f.recibidoPor);
+  fotosListas = [];
+  $('#fotos-prev').innerHTML = '';
+}
+
+/* ---------- bloques de equipo ---------- */
+function opcionesModelo() {
+  if (LISTAS.modelosGrupos && LISTAS.modelosGrupos.length) {
+    return '<option value="">Elige el modelo</option>' + LISTAS.modelosGrupos.map((g) =>
+      '<optgroup label="' + esc(g.linea) + '">' + g.modelos.map((m) => '<option>' + esc(m) + '</option>').join('') + '</optgroup>').join('');
+  }
+  return '<option value="">Elige el modelo</option>' + LISTAS.modelos.map((m) => '<option>' + esc(m) + '</option>').join('');
+}
+function agregarEquipo() {
+  const cont = $('#equipos');
+  const n = cont.children.length + 1;
+  const div = document.createElement('div');
+  div.className = 'equipo';
+  div.innerHTML =
+    '<div class="equipo-cab"><strong>Modelo ' + n + '</strong>' + (n > 1 ? '<button type="button" class="btn-quitar">Quitar</button>' : '') + '</div>' +
+    '<label class="campo"><span>Modelo</span><select class="e-modelo">' + opcionesModelo() + '</select></label>' +
+    '<div class="dos"><label class="campo"><span>Cantidad de equipos</span><input type="number" class="e-cantidad" min="1" inputmode="numeric" value="1"></label>' +
+    '<label class="campo"><span class="e-bultos-lbl">N° de bultos</span><input type="number" class="e-bultos" min="1" max="200" inputmode="numeric" value="1"></label></div>' +
+    '<div class="e-kit-zona solo-almacen oculto"><p class="grupo-titulo">Contenido del kit</p><p class="kit-ayuda">Toca lo que llegó. Lo que no marques quedará como faltante.</p><div class="chips e-kit" data-grupo="kit"></div></div>' +
+    '<label class="campo solo-almacen"><span>Otro accesorio que llegó (opcional)</span><input type="text" class="e-otro"></label>' +
+    '<label class="campo"><span>N° de serie o lote (uno por línea)</span><textarea class="e-series" rows="2"></textarea></label>' +
+    '<label class="campo"><span>Falla reportada</span><select class="e-falla"><option value="">Elige la falla</option>' + LISTAS.fallas.map((x) => '<option>' + esc(x) + '</option>').join('') + '</select></label>' +
+    '<label class="campo"><span>Qué pasó (detalle del cliente)</span><textarea class="e-obs" rows="2"></textarea></label>';
+  cont.appendChild(div);
+}
+function renumerarEquipos() {
+  [...document.querySelectorAll('#equipos .equipo')].forEach((d, i) => { d.querySelector('.equipo-cab strong').textContent = 'Modelo ' + (i + 1); });
+}
+$('#btn-agregar-equipo').addEventListener('click', () => { agregarEquipo(); aplicarModo(); });
+
+function esAviso() { return valorChips('modo') === MODOS[0]; }
+
+// El nombre del cliente se guarda siempre en MAYÚSCULAS
+document.querySelector('#form [name="cliente"]').addEventListener('input', (e) => {
+  const el = e.target, a = el.selectionStart, b = el.selectionEnd;
+  const up = el.value.toUpperCase();
+  if (up !== el.value) { el.value = up; try { el.setSelectionRange(a, b); } catch (err) {} }
+});
+
+/* ---------- protección contra casos duplicados ---------- */
+let pendientesCache = [];
+let dupDescartado = false;
+let dupCoincidencias = [];
+const normalizar = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/\b(s\.?a\.?c\.?|s\.?a\.?|e\.?i\.?r\.?l\.?|srl)\b/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+const soloDigitos = (s) => String(s || '').replace(/\D/g, '');
+async function refrescarPendientes() {
+  if (!puede('almacen')) { pendientesCache = []; return; }
+  try { pendientesCache = agruparPorRecibir(await run('porRecibir')); } catch (e) { pendientesCache = []; }
+}
+function buscarDuplicados() {
+  if (esAviso()) return [];
+  const f = $('#form');
+  const nom = normalizar(f.cliente.value);
+  const tel = soloDigitos(f.telefono.value);
+  return pendientesCache.filter((c) => {
+    const cn = normalizar(c.cliente);
+    const ct = soloDigitos(c.telefono);
+    const porNombre = nom.length >= 4 && cn.length >= 4 && (cn.indexOf(nom) >= 0 || nom.indexOf(cn) >= 0);
+    const porTelefono = tel.length >= 7 && ct.length >= 7 && tel.slice(-7) === ct.slice(-7);
+    return porNombre || porTelefono;
+  });
+}
+function pintarDuplicados() {
+  const caja = $('#dup-aviso');
+  dupCoincidencias = dupDescartado ? [] : buscarDuplicados();
+  if (!dupCoincidencias.length) { caja.className = 'oculto'; caja.innerHTML = ''; return; }
+  caja.className = 'dup-caja';
+  caja.innerHTML = '<strong>Este cliente tiene ' + (dupCoincidencias.length === 1 ? 'una devolución avisada que aún no se recibe. ¿Es la misma?' : 'devoluciones avisadas que aún no se reciben. ¿Es alguna de estas?') +
+    '</strong>' +
+    dupCoincidencias.map((c) => '<div class="dup-item"><span>' + esc(c.id) + (c.conjunta ? ' (+ ' + esc(c.conjunta) + ')' : '') + ' · ' + esc(c.cliente) +
+      '<br>' + esc(c.modelo) + ' · avisada el ' + esc(c.fecha) + (c.vendedor ? ' por ' + esc(c.vendedor) : '') + '</span>' +
+      '<button type="button" class="dup-recibir" data-id="' + esc(c.id) + '">Recibir esta</button></div>').join('') +
+    '<button type="button" class="dup-no">No, es otra devolución distinta</button>';
+}
+let tDup = null;
+['cliente', 'telefono'].forEach((n) => {
+  document.querySelector('#form [name="' + n + '"]').addEventListener('input', () => {
+    dupDescartado = false; clearTimeout(tDup); tDup = setTimeout(pintarDuplicados, 300);
+  });
+});
+$('#dup-aviso').addEventListener('click', (e) => {
+  const r = e.target.closest('.dup-recibir');
+  if (r) { abrirRecepcion(r.dataset.id); return; }
+  if (e.target.closest('.dup-no')) { dupDescartado = true; pintarDuplicados(); }
+});
+function aplicarModo() {
+  const aviso = esAviso();
+  $('#form').classList.toggle('modo-aviso', aviso);
+  $('#modo-ayuda').textContent = aviso
+    ? 'El vendedor avisa que el cliente devolverá equipos. El almacén completará la recepción cuando lleguen.'
+    : 'El equipo ya está en el almacén: se registra completo, con la lista de control del kit y las etiquetas.';
+  document.querySelectorAll('.e-bultos-lbl').forEach((s) => { s.textContent = aviso ? 'Bultos que enviará' : 'N° de bultos'; });
+  $('#btn-guardar').textContent = aviso ? 'Crear aviso de devolución' : 'Guardar devolución';
+  try { localStorage.setItem('tl_modo', valorChips('modo')); } catch (e) {}
+  if (typeof pintarDuplicados === 'function' && $('#dup-aviso')) pintarDuplicados();
+}
+$('#equipos').addEventListener('click', (e) => {
+  const q = e.target.closest('.btn-quitar');
+  if (q) { q.closest('.equipo').remove(); renumerarEquipos(); }
+});
+$('#equipos').addEventListener('change', (e) => {
+  if (!e.target.classList.contains('e-modelo')) return;
+  const bloque = e.target.closest('.equipo');
+  const kit = (LISTAS.kits && LISTAS.kits[e.target.value]) || [];
+  bloque.querySelector('.e-kit').innerHTML = kit.map((k) =>
+    '<button type="button" class="chip" aria-pressed="false" data-valor="' + esc(k) + '">' + esc(k) + '</button>').join('');
+  bloque.querySelector('.e-kit-zona').classList.toggle('oculto', !kit.length);
+});
+function leerEquipos() {
+  return [...document.querySelectorAll('#equipos .equipo')].map((b) => {
+    const chips = [...b.querySelectorAll('.e-kit .chip')];
+    return {
+      modelo: b.querySelector('.e-modelo').value,
+      cantidad: b.querySelector('.e-cantidad').value,
+      bultos: b.querySelector('.e-bultos').value,
+      series: b.querySelector('.e-series').value,
+      falla: b.querySelector('.e-falla').value,
+      observacion: b.querySelector('.e-obs').value.trim(),
+      otro: b.querySelector('.e-otro').value.trim(),
+      recibidos: chips.filter((c) => c.getAttribute('aria-pressed') === 'true').map((c) => c.dataset.valor),
+      faltantes: chips.filter((c) => c.getAttribute('aria-pressed') !== 'true').map((c) => c.dataset.valor)
+    };
+  });
+}
+
+$('#fotos').addEventListener('change', async (e) => {
+  const archivos = [...e.target.files];
+  for (const a of archivos) {
+    try {
+      const b64 = await reducirFoto(a);
+      fotosListas.push({ nombre: a.name.replace(/\.[^.]+$/, '') + '.jpg', b64: b64 });
+      $('#fotos-prev').insertAdjacentHTML('beforeend', '<img alt="Foto ' + fotosListas.length + '" src="data:image/jpeg;base64,' + b64 + '">');
+    } catch (err) { mensaje('error', 'No se pudo leer una de las fotos. Intenta tomarla de nuevo.'); }
+  }
+  e.target.value = '';
+});
+
+function reducirFoto(file) {
+  return new Promise((res, rej) => {
+    const lector = new FileReader();
+    lector.onerror = rej;
+    lector.onload = () => {
+      const img = new Image();
+      img.onerror = rej;
+      img.onload = () => {
+        const max = 1600;
+        const k = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        res(c.toDataURL('image/jpeg', 0.72).split(',')[1]);
+      };
+      img.src = lector.result;
+    };
+    lector.readAsDataURL(file);
+  });
+}
+
+$('#form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  const aviso = esAviso();
+  const d = {
+    modo: aviso ? 'aviso' : 'almacen',
+    envioModo: aviso ? valorChips('envioModo') : '', agencia: f.agencia.value, fechaEnvio: f.fechaEnvio.value,
+    guiaAgencia: f.guiaAgencia.value.trim(), fechaLlegada: f.fechaLlegada.value,
+    tipo: valorChips('tipo'), equipos: leerEquipos(),
+    cliente: f.cliente.value.trim().toUpperCase(), telefono: f.telefono.value.trim(), vendedor: f.vendedor.value,
+    comprobante: f.comprobante.value.trim(), fechaCompra: f.fechaCompra.value,
+    comoLlego: valorChips('comoLlego'), estadoLlegada: valorChips('estadoLlegada'),
+    ubicacion: f.ubicacion.value.trim(), recibidoPor: f.recibidoPor.value.trim(),
+    cambioAnticipado: valorChips('cambioAnticipado') === 'Sí',
+    fechaReemplazo: f.fechaReemplazo.value, guiaReemplazo: f.guiaReemplazo.value.trim(), serieReemplazo: f.serieReemplazo.value.trim()
+  };
+  if (!ocaEnCurso && DESP_API && ocaLista.length) {
+    const m = buscarOCAParecida(d);
+    if (m) {
+      const r = await ventana('<h2>Se encontró un cambio anticipado parecido</h2><p>¿Este registro es el equipo con falla de esta OCA? Si lo es, se enlazan y no pierdes nada de lo que ya llenaste.</p>' +
+        '<div class="oca"><div class="cod">' + esc(m.codigo) + (m.caso ? ' · ' + esc(m.caso) : '') + '</div><div class="meta">' + esc(m.cliente) + (m.telefono ? ' · ' + esc(m.telefono) : '') + ' · Vendedor: ' + esc(m.vendedor) + ' · Salió el ' + esc(m.salio) + '</div>' +
+        '<div class="dev">↩️ Debe devolver: <b>' + (m.devolver ? m.devolver.q + ' × ' + esc(m.devolver.modelo) : '—') + '</b></div></div>', 'Sí, es esta: enlazar', 'No, seguir con mi registro');
+      if (r.ok) {
+        ocaEnCurso = m.codigo;
+        const p = String(m.salio || '').split('/');
+        d.cambioAnticipado = true; d.guiaReemplazo = m.codigo; if (p.length === 3) d.fechaReemplazo = p[2] + '-' + p[1] + '-' + p[0];
+      } else {
+        ocaDescartadas.add(m.codigo);
+        mensaje('info', 'Sigue con tu registro. Cuando termines, vuelve a tocar el botón para guardarlo.');
+        return;
+      }
+    }
+  }
+  const faltan = [];
+  if (!d.tipo) faltan.push('tipo de caso');
+  if (!d.cliente) faltan.push('cliente');
+  if (aviso && !d.vendedor) faltan.push('vendedor');
+  if (aviso && !d.envioModo) faltan.push('cómo enviará el equipo');
+  if (aviso && /agencia/i.test(d.envioModo) && !d.agencia) faltan.push('agencia');
+  if (!aviso && !d.recibidoPor) faltan.push('recibido por');
+  if (d.cambioAnticipado) {
+    if (!d.fechaReemplazo) faltan.push('fecha de envío del reemplazo');
+    if (!d.guiaReemplazo) faltan.push('guía N° del reemplazo');
+  }
+  d.equipos.forEach((x, i) => {
+    const n = d.equipos.length > 1 ? ' del modelo ' + (i + 1) : '';
+    if (!x.modelo) faltan.push('modelo' + n);
+    if (!(Number(x.cantidad) >= 1)) faltan.push('cantidad de equipos' + n);
+    if (!(Number(x.bultos) >= 1)) faltan.push('N° de bultos' + n);
+  });
+  if (faltan.length) { mensaje('error', 'Completa: ' + faltan.join(', ') + '.'); return; }
+  if (!aviso) {
+    pintarDuplicados();
+    if (dupCoincidencias.length) {
+      mensaje('error', 'Este cliente tiene una devolución avisada por recibir. Elige «Recibir esta» o confirma que es otra devolución distinta.');
+      return;
+    }
+  }
+
+  const btn = $('#btn-guardar');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  mensaje('', '');
+  try {
+    try { localStorage.setItem('tl_recibido', d.recibidoPor); } catch (err) {}
+    const res = await run('crearDevolucion', d);
+    borrarBorrador();
+    const creados = res.casos;
+    if (ocaEnCurso && creados.length) {
+      try { await despachosApi({ action: 'vincularOCA', codigo: ocaEnCurso, caso: creados[0].id }); mensaje('ok', 'Enlazado con ' + ocaEnCurso + '.'); }
+      catch (err) { mensaje('error', 'El caso se registró, pero no se pudo enlazar con ' + ocaEnCurso + '. Avísale a administración.'); }
+      ocaEnCurso = '';
+    }
+    ultimoMensaje = res.mensaje;
+    ultimoRegistrado = creados.map((c) => ({ id: c.id, cliente: d.cliente, modelo: c.modelo, bultos: c.bultos, fecha: hoyTexto() }));
+    const totalEtiquetas = creados.reduce((s, c) => s + c.bultos, 0);
+    $('#ex-codigo').textContent = creados.map((c) => c.id).join(' · ');
+    $('#ex-detalle').innerHTML = esc(d.cliente) + '<br>' + creados.map((c) =>
+      esc(c.id) + ': ' + esc(c.modelo) + ', ' + c.bultos + (c.bultos === 1 ? ' bulto' : ' bultos')).join('<br>');
+    const conFaltantes = d.equipos.filter((x) => x.faltantes.length);
+    if (conFaltantes.length) {
+      $('#ex-detalle').innerHTML += '<br><span class="alerta-txt">Faltantes: ' + esc(conFaltantes.map((x) => x.faltantes.join(', ')).join(' / ')) + '</span>';
+    }
+    $('#ex-imprimir').textContent = 'Imprimir ' + totalEtiquetas + (totalEtiquetas === 1 ? ' etiqueta' : ' etiquetas');
+    $('#ex-fotos').textContent = '';
+    $('#ex-titulo').textContent = aviso ? 'Aviso de devolución creado' : 'Devolución registrada';
+    $('#ex-imprimir').classList.toggle('oculto', aviso);
+    if (aviso) $('#ex-detalle').innerHTML += '<br>Quedó en «Por recibir» hasta que llegue al almacén.';
+    mostrar('exito', aviso ? 'Aviso creado' : (creados.length > 1 ? 'Casos registrados' : 'Caso registrado'));
+    cargarBadge();
+    if (!aviso && fotosListas.length) {
+      const ids = creados.map((c) => c.id);
+      for (let i = 0; i < fotosListas.length; i++) {
+        $('#ex-fotos').textContent = 'Subiendo fotos ' + (i + 1) + ' de ' + fotosListas.length + '…';
+        await run('subirFoto', ids, ids[0] + '-' + (i + 1) + '.jpg', fotosListas[i].b64);
+      }
+      $('#ex-fotos').textContent = fotosListas.length + (fotosListas.length === 1 ? ' foto guardada.' : ' fotos guardadas.');
+    }
+  } catch (err) {
+    mensaje('error', 'No se guardó la devolución: ' + (err && err.message ? err.message : err));
+  } finally {
+    btn.disabled = false; aplicarModo();
+  }
+});
+
+function hoyTexto() {
+  const d = new Date();
+  return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear();
+}
+
+$('#ex-imprimir').addEventListener('click', () => abrirImpresion(ultimoRegistrado));
+$('#ex-otro').addEventListener('click', () => { prepararFormulario(); mostrar('registrar', 'Registrar devolución'); });
+const ES_IOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const ES_MOVIL = ES_IOS || /Android/i.test(navigator.userAgent);
+function compartirWhatsApp(texto) {
+  if (!texto) return;
+  const enc = encodeURIComponent(texto);
+  if (ES_IOS) {
+    // En iPhone se abre la aplicación directamente (el enlace web a veces se queda en la página o manda al App Store)
+    const a = document.createElement('a');
+    a.href = 'whatsapp://send?text=' + enc;
+    a.target = '_top';
+    document.body.appendChild(a); a.click(); a.remove();
+    mensaje('info', 'Si WhatsApp no se abrió, usa el botón de copiar y pega el mensaje en el grupo.');
+  } else {
+    window.open('https://wa.me/?text=' + enc, '_blank');
+  }
+}
+async function copiarTexto(texto, textoOk) {
+  if (!texto) return;
+  let ok = false;
+  try { await navigator.clipboard.writeText(texto); ok = true; } catch (e) {}
+  if (!ok) {
+    const ta = document.createElement('textarea');
+    ta.value = texto; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, ta.value.length);
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    ta.remove();
+  }
+  mensaje(ok ? 'ok' : 'error', ok ? (textoOk || 'Mensaje copiado. Abre el grupo de devoluciones en WhatsApp y pégalo.') : 'No se pudo copiar. Mantén presionado el texto para copiarlo.');
+}
+$('#ex-whatsapp').addEventListener('click', () => compartirWhatsApp(ultimoMensaje));
+$('#ex-copiar').addEventListener('click', () => copiarTexto(ultimoMensaje));
+let resumenDia = '';
+$('#btn-resumen-wa').addEventListener('click', () => {
+  if (!resumenDia) { mensaje('info', 'El resumen aún se está preparando, intenta en un momento.'); return; }
+  compartirWhatsApp(resumenDia);
+});
+$('#btn-resumen-copiar').addEventListener('click', () => copiarTexto(resumenDia));
+
+/* ---------- envío del cliente y llegada estimada ---------- */
+function isoHoy() {
+  const d = new Date();
+  return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+}
+function fechaDeIso(s) { const p = String(s || '').split('-'); return p.length === 3 ? new Date(+p[0], +p[1] - 1, +p[2]) : null; }
+function sumarDias(d, n) { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() + n); return x; }
+function diasEntre(a, b) { return Math.round((sumarDias(b, 0) - sumarDias(a, 0)) / 86400000); }
+const DIAS_CORTOS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+function fechaCorta(d) { return DIAS_CORTOS[d.getDay()] + ' ' + ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2); }
+function esModoAgencia() { return /agencia/i.test(valorChips('envioModo') || ''); }
+function actualizarEnvio() {
+  const f = $('#form');
+  const modo = valorChips('envioModo');
+  const ag = esModoAgencia();
+  $('#envio-agencia').classList.toggle('oculto', !ag);
+  $('#envio-fecha').classList.toggle('oculto', !modo || ag);
+  const caja = $('#envio-estimado');
+  let desde = null, hasta = null;
+  if (ag) {
+    const a = (LISTAS.agencias || []).filter((x) => x.nombre === f.agencia.value)[0];
+    const envio = fechaDeIso(f.fechaEnvio.value) || new Date();
+    if (a && a.min !== null && a.min !== undefined) { desde = sumarDias(envio, a.min); hasta = sumarDias(envio, a.max != null ? a.max : a.min); }
+    else if (a) { caja.textContent = 'Esta agencia no tiene días de demora definidos en los Datos maestros: no se calculará la llegada.'; caja.classList.remove('oculto'); return; }
+  } else if (modo && f.fechaLlegada.value) {
+    desde = hasta = fechaDeIso(f.fechaLlegada.value);
+  }
+  if (!desde) { caja.classList.add('oculto'); return; }
+  const n1 = diasEntre(new Date(), desde), n2 = diasEntre(new Date(), hasta);
+  const rango = desde.getTime() === hasta.getTime() ? 'el ' + fechaCorta(desde) : 'entre el ' + fechaCorta(desde) + ' y el ' + fechaCorta(hasta);
+  const dias = n2 <= 0 ? 'hoy' : (n1 === n2 ? 'en ' + n1 + (n1 === 1 ? ' día' : ' días') : 'en ' + Math.max(n1, 0) + ' a ' + n2 + ' días');
+  caja.textContent = 'Llegada estimada: ' + rango + ' (' + dias + '). Se agenda en el calendario de devoluciones.';
+  caja.classList.remove('oculto');
+}
+['agencia', 'fechaEnvio', 'fechaLlegada'].forEach((n) => {
+  document.querySelector('#form [name="' + n + '"]').addEventListener('change', actualizarEnvio);
+});
+
+/* ---------- etiqueta de estado de llegada ---------- */
+function pillLlegada(c) {
+  if (!c.hastaISO) return '<span class="pill p-sin">Sin fecha estimada</span>';
+  const hoy = new Date();
+  const desde = fechaDeIso(c.desdeISO), hasta = fechaDeIso(c.hastaISO);
+  const atraso = diasEntre(hasta, hoy), faltan = diasEntre(hoy, desde);
+  if (atraso > 0) return '<span class="pill p-atr">ATRASADA ' + atraso + (atraso === 1 ? ' día' : ' días') + '</span>';
+  if (faltan <= 0) return '<span class="pill p-hoy">Puede llegar hoy</span>';
+  if (faltan === 1) return '<span class="pill p-man">Llega mañana</span>';
+  return '<span class="pill p-prox">Llega en ' + faltan + ' días · ' + fechaCorta(desde) + '</span>';
+}
+
+/* ---------- pendientes y búsqueda ---------- */
+function filaCaso(c, accion, extraHtml) {
+  const b = c.bultos || c.bultosAvisados;
+  const bultos = b ? b + (b === '1' ? ' bulto' : ' bultos') + (!c.bultos && c.bultosAvisados ? ' avisados' : '') : '';
+  return '<li><div class="info"><div class="id">' + esc(c.id) + '</div><div class="meta">' + esc([c.cliente, c.modelo].filter(Boolean).join(' · ')) +
+    '</div><div class="meta">' + esc([c.fecha, bultos, c.agencia, c.vendedor ? 'Vend.: ' + c.vendedor : '', accion === 'recibir' ? '' : c.estado].filter(Boolean).join(' · ')) + '</div>' + (extraHtml || '') + '</div>' +
+    '<button type="button" data-accion="' + accion + '" data-id="' + esc(c.id) + '">' + ({ imprimir: 'Imprimir', recibir: 'Recibir' }[accion] || 'Abrir') + '</button></li>';
+}
+
+async function cargarPendientes() {
+  $('#lista-pendientes').innerHTML = '<li class="vacio">Cargando…</li>';
+  try {
+    const l = await run('etiquetasPendientes');
+    $('#lista-pendientes').innerHTML = l.length ? l.map((c) => filaCaso(c, 'imprimir')
+      .replace('<button type="button" data-accion="imprimir"', '<div class="botones-fila"><button type="button" class="sec" data-accion="yaimpresa" data-id="' + esc(c.id) + '">Ya impresa</button><button type="button" data-accion="imprimir"')
+      .replace('</button></li>', '</button></div></li>')).join('') : '<li class="vacio">No hay etiquetas pendientes.</li>';
+    pintarBadge(l.length);
+  } catch (err) { $('#lista-pendientes').innerHTML = '<li class="vacio">No se pudo cargar la lista.</li>'; }
+}
+async function cargarBadge() {
+  if (puede('almacen') && DESP_API) cargarOCA(true);
+  if (!SESION) return;
+  if (puede('almacen')) {
+    try { pintarBadge((await run('etiquetasPendientes')).length); } catch (e) {}
+    try { pintarBadgeR(agruparPorRecibir(await run('porRecibir')).length); } catch (e) {}
+  }
+  if (puede('revision')) {
+    try { pintarBadgeT((await run('porRevisar')).filter((c) => c.estado !== 'En revisión').length); } catch (e) {}
+  }
+}
+function pintarBadgeT(n) { const b = $('#badge-t'); b.textContent = n; b.classList.toggle('oculto', !n); }
+function pillRevision(c) {
+  const enRev = c.estado === 'En revisión' ? '<span class="pill p-man" style="margin-right:6px">En revisión' + (c.tecnico ? ' · ' + esc(c.tecnico) : '') + '</span>' : '';
+  if (!c.revisarISO) return enRev;
+  const d = diasEntre(new Date(), fechaDeIso(c.revisarISO));
+  if (d < 0) return enRev + '<span class="pill p-atr">VENCIDA hace ' + (-d) + (d === -1 ? ' día' : ' días') + '</span>';
+  if (d === 0) return enRev + '<span class="pill p-hoy">Vence hoy</span>';
+  return enRev + '<span class="pill p-prox">Revisar antes del ' + fechaCorta(fechaDeIso(c.revisarISO)) + '</span>';
+}
+async function cargarRevision() {
+  $('#lista-revision').innerHTML = '<li class="vacio">Cargando…</li>';
+  try {
+    const l = await run('porRevisar');
+    $('#lista-revision').innerHTML = l.length ? l.map((c) => filaCaso(c, 'abrir', pillRevision(c))).join('') : '<li class="vacio">No hay casos pendientes de revisión.</li>';
+    pintarBadgeT(l.filter((c) => c.estado !== 'En revisión').length);
+  } catch (err) { $('#lista-revision').innerHTML = '<li class="vacio">No se pudo cargar la lista.</li>'; }
+}
+function pintarBadgeR(n) { const b = $('#badge-r'); b.textContent = n; b.classList.toggle('oculto', !n); }
+function agruparPorRecibir(lista) {
+  const vistos = new Set();
+  return lista.filter((c) => {
+    if (vistos.has(c.id)) return false;
+    vistos.add(c.id);
+    String(c.conjunta || '').split(',').map((x) => x.trim()).filter(Boolean).forEach((x) => vistos.add(x));
+    return true;
+  });
+}
+async function cargarPorRecibir() {
+  $('#lista-porrecibir').innerHTML = '<li class="vacio">Cargando…</li>';
+  try {
+    const l = agruparPorRecibir(await run('porRecibir'));
+    $('#lista-porrecibir').innerHTML = l.length ? l.map((c) => {
+      const extra = c.conjunta ? Object.assign({}, c, { modelo: c.modelo + ' (+ ' + c.conjunta + ')' }) : c;
+      return filaCaso(extra, 'recibir', pillLlegada(c));
+    }).join('') : '<li class="vacio">No hay devoluciones por recibir.</li>';
+    pintarBadgeR(l.length);
+    resumenDia = '';
+    run('textoResumenDiario').then((tx) => { resumenDia = tx; }).catch(() => {});
+  } catch (err) { $('#lista-porrecibir').innerHTML = '<li class="vacio">No se pudo cargar la lista.</li>'; }
+}
+
+/* ---------- recepción de un aviso ---------- */
+async function abrirRecepcion(id) {
+  mensaje('', '');
+  mostrar('recibir', 'Recibir devolución');
+  $('#r-titulo').textContent = 'Cargando…';
+  $('#r-info').innerHTML = ''; $('#r-equipos').innerHTML = '';
+  try {
+    grupoRecibir = await run('obtenerGrupo', id);
+    if (!grupoRecibir || !grupoRecibir.length) { mensaje('error', 'No encontré el caso ' + id + '.'); return; }
+    const c0 = grupoRecibir[0];
+    $('#r-titulo').textContent = c0.cliente;
+    $('#r-info').innerHTML = (c0.cambioAnticipado === 'Sí'
+      ? '<div class="alerta-caja">Cambio anticipado: el reemplazo ya se envió el ' + esc(c0.fechaReemplazo) + (c0.guiaReemplazo ? ' (guía ' + esc(c0.guiaReemplazo) + ')' : '') + '. No enviar otro.</div>' : '') +
+      '<dl class="datos">' + [['Tipo', c0.tipo], ['Vendedor', c0.vendedor], ['Aviso creado', c0.fecha], ['Envío', [c0.agencia || c0.comoLlego, c0.guiaAgencia ? 'guía ' + c0.guiaAgencia : ''].filter(Boolean).join(' · ')],
+          ['Llegada estimada', c0.llegadaDesde ? (c0.llegadaDesde === c0.llegadaHasta ? c0.llegadaDesde : c0.llegadaDesde + ' al ' + c0.llegadaHasta) : ''], ['Teléfono', c0.telefono], ['Comprobante', c0.comprobante]]
+        .filter((f) => f[1]).map((f) => '<dt>' + esc(f[0]) + '</dt><dd>' + esc(f[1]) + '</dd>').join('') + '</dl>';
+    $('#r-equipos').innerHTML = grupoRecibir.map((c, i) => {
+      const kit = (LISTAS.kits && LISTAS.kits[c.modelo]) || [];
+      return '<div class="r-equipo" data-i="' + i + '">' +
+        '<h3>' + esc(c.id) + ' · ' + esc(c.modelo) + '</h3>' +
+        '<p class="esperado">' + esc(c.cantidad) + ' equipo(s) · el vendedor avisó ' + esc(c.bultosAvisados || '1') + ' bulto(s)' + (c.falla ? ' · ' + esc(c.falla) : '') + '</p>' +
+        '<label class="campo"><span>Bultos que llegaron</span><input type="number" class="r-bultos" min="1" inputmode="numeric" value="' + esc(c.bultosAvisados || '1') + '"></label>' +
+        (kit.length ? '<p class="grupo-titulo">Contenido del kit</p><p class="kit-ayuda">Toca lo que llegó. Lo que no marques quedará como faltante.</p><div class="chips r-kit" data-grupo="kit">' +
+          kit.map((k) => '<button type="button" class="chip" aria-pressed="false" data-valor="' + esc(k) + '">' + esc(k) + '</button>').join('') + '</div>' : '') +
+        '<label class="campo"><span>Otro accesorio que llegó (opcional)</span><input type="text" class="r-otro"></label>' +
+        '<label class="campo"><span>N° de serie o lote (uno por línea)</span><textarea class="r-series" rows="2">' + esc(String(c.serie || '').split(', ').join('\n')) + '</textarea></label>' +
+        '</div>';
+    }).join('');
+    llenarChips('rComoLlego', LISTAS.comoLlego, '');
+    llenarChips('rEstadoLlegada', ESTADOS_LLEGADA, '');
+    opciones($('#r-ubicacion'), LISTAS.ubicaciones || [], 'Elige la ubicación');
+    if ((LISTAS.ubicaciones || []).length === 1) $('#r-ubicacion').value = LISTAS.ubicaciones[0];
+    fijarRecibidoPor($('#r-recibido'));
+    fotosRecibir = []; $('#r-fotos-prev').innerHTML = '';
+  } catch (err) { mensaje('error', 'No se pudo abrir la devolución: ' + (err && err.message ? err.message : err)); }
+}
+$('#r-fotos').addEventListener('change', async (e) => {
+  for (const a of [...e.target.files]) {
+    try {
+      const b64 = await reducirFoto(a);
+      fotosRecibir.push(b64);
+      $('#r-fotos-prev').insertAdjacentHTML('beforeend', '<img alt="Foto ' + fotosRecibir.length + '" src="data:image/jpeg;base64,' + b64 + '">');
+    } catch (err) { mensaje('error', 'No se pudo leer una de las fotos.'); }
+  }
+  e.target.value = '';
+});
+$('#r-confirmar').addEventListener('click', async () => {
+  const equipos = [...document.querySelectorAll('#r-equipos .r-equipo')].map((b) => {
+    const c = grupoRecibir[Number(b.dataset.i)];
+    const chips = [...b.querySelectorAll('.r-kit .chip')];
+    return {
+      id: c.id, modelo: c.modelo, bultos: b.querySelector('.r-bultos').value, series: b.querySelector('.r-series').value,
+      otro: b.querySelector('.r-otro').value.trim(),
+      recibidos: chips.filter((x) => x.getAttribute('aria-pressed') === 'true').map((x) => x.dataset.valor),
+      faltantes: chips.filter((x) => x.getAttribute('aria-pressed') !== 'true').map((x) => x.dataset.valor)
+    };
+  });
+  const d = {
+    equipos: equipos, recibidoPor: $('#r-recibido').value, ubicacion: $('#r-ubicacion').value,
+    comoLlego: valorChips('rComoLlego'), estadoLlegada: valorChips('rEstadoLlegada')
+  };
+  const faltan = [];
+  if (!d.recibidoPor) faltan.push('recibido por');
+  equipos.forEach((x) => { if (!(Number(x.bultos) >= 1)) faltan.push('bultos de ' + x.id); });
+  if (faltan.length) { mensaje('error', 'Completa: ' + faltan.join(', ') + '.'); return; }
+  const btn = $('#r-confirmar'); btn.disabled = true; btn.textContent = 'Guardando…';
+  try {
+    try { localStorage.setItem('tl_recibido', d.recibidoPor); } catch (e) {}
+    const resp = await run('confirmarRecepcion', d);
+    const casos = resp.casos;
+    ultimoMensaje = resp.mensaje;
+    ultimoRegistrado = casos.map((c) => ({ id: c.id, cliente: c.cliente, modelo: c.modelo, bultos: Number(c.bultos) || 1, fecha: c.fechaRecepcion || hoyTexto() }));
+    const total = ultimoRegistrado.reduce((s, c) => s + c.bultos, 0);
+    $('#ex-titulo').textContent = 'Recepción confirmada';
+    $('#ex-codigo').textContent = casos.map((c) => c.id).join(' · ');
+    $('#ex-detalle').innerHTML = esc(casos[0].cliente) + '<br>' + casos.map((c) => esc(c.id) + ': ' + esc(c.modelo) + ', ' + esc(c.bultos) + ' bulto(s)' +
+      (c.bultosAvisados && c.bultosAvisados !== c.bultos ? ' <span class="alerta-txt">(se avisaron ' + esc(c.bultosAvisados) + ')</span>' : '') +
+      (c.faltantes ? '<br><span class="alerta-txt">Faltantes: ' + esc(c.faltantes) + '</span>' : '')).join('<br>');
+    $('#ex-imprimir').textContent = 'Imprimir ' + total + (total === 1 ? ' etiqueta' : ' etiquetas');
+    $('#ex-imprimir').classList.remove('oculto');
+    $('#ex-fotos').textContent = '';
+    mostrar('exito', 'Recepción confirmada');
+    cargarBadge();
+    if (fotosRecibir.length) {
+      const ids = casos.map((c) => c.id);
+      for (let i = 0; i < fotosRecibir.length; i++) {
+        $('#ex-fotos').textContent = 'Subiendo fotos ' + (i + 1) + ' de ' + fotosRecibir.length + '…';
+        await run('subirFoto', ids, ids[0] + '-r' + (i + 1) + '.jpg', fotosRecibir[i]);
+      }
+      $('#ex-fotos').textContent = fotosRecibir.length + (fotosRecibir.length === 1 ? ' foto guardada.' : ' fotos guardadas.');
+    }
+  } catch (err) {
+    mensaje('error', 'No se confirmó la recepción: ' + (err && err.message ? err.message : err));
+  } finally { btn.disabled = false; btn.textContent = 'Confirmar recepción'; }
+});
+function pintarBadge(n) { const b = $('#badge'); b.textContent = n; b.classList.toggle('oculto', !n); }
+
+let tBuscar = null;
+$('#q').addEventListener('input', () => { clearTimeout(tBuscar); tBuscar = setTimeout(buscar, 350); });
+async function buscar() {
+  $('#lista-buscar').innerHTML = '<li class="vacio">Buscando…</li>';
+  try {
+    const l = await run('buscarCasos', $('#q').value);
+    $('#lista-buscar').innerHTML = l.length ? l.map((c) => filaCaso(c, 'abrir')).join('') : '<li class="vacio">No encontré casos con ese dato.</li>';
+  } catch (err) { $('#lista-buscar').innerHTML = '<li class="vacio">No se pudo buscar.</li>'; }
+}
+
+document.addEventListener('click', (e) => {
+  const l = e.target.closest('.link-caso');
+  if (l) abrirCaso(l.dataset.id);
+});
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('.lista-casos button');
+  if (!b) return;
+  if (b.dataset.accion === 'recibir') { abrirRecepcion(b.dataset.id); return; }
+  if (b.dataset.accion === 'yaimpresa') {
+    b.disabled = true;
+    try { await run('marcarImpresas', b.dataset.id); mensaje('ok', b.dataset.id + ' salió de «Por imprimir».'); cargarPendientes(); }
+    catch (err) { b.disabled = false; mensaje('error', 'No se pudo actualizar ' + b.dataset.id + '.'); }
+    return;
+  }
+  const c = await run('obtenerCaso', b.dataset.id);
+  if (!c) { mensaje('error', 'No encontré el caso ' + b.dataset.id + '.'); return; }
+  if (b.dataset.accion === 'imprimir') abrirImpresion(c); else pintarCaso(c);
+});
+
+/* ---------- ficha del caso (lo que abre el QR) ---------- */
+async function abrirCaso(id) {
+  mostrar('caso', 'Caso ' + id);
+  $('#c-titulo').textContent = 'Cargando…';
+  $('#c-datos').innerHTML = '';
+  try {
+    const c = await run('obtenerCaso', id);
+    if (!c) { mensaje('error', 'No encontré el caso ' + id + '.'); return; }
+    pintarCaso(c);
+  } catch (err) { mensaje('error', 'No se pudo abrir el caso.'); }
+}
+function pintarCaso(c) {
+  casoActual = c;
+  mostrar('caso', 'Caso ' + c.id);
+  camposPermitidos().then((l) => $('#c-corregir').classList.toggle('oculto', !l.length));
+  $('#c-titulo').textContent = c.cliente || c.id;
+  const filas = [
+    ['Modelo', c.modelo], ['Tipo', c.tipo], ['Cantidad', c.cantidad], ['Bultos', c.bultos], ['Serie / lote', c.serie],
+    ['Falla', c.falla], ['Detalle', c.observacion], ['Registrado', c.fecha], ['Revisar antes del', c.revisarAntes],
+    ['¿En garantía?', c.garantia], ['Cómo llegó', c.comoLlego], ['Estado de llegada', c.estadoLlegada],
+    ['Accesorios recibidos', c.accesorios], ['Recibido por', c.recibidoPor], ['Vendedor', c.vendedor], ['Teléfono', c.telefono],
+    ['Comprobante', c.comprobante], ['Solución', c.solucion], ['Diagnóstico técnico', c.diagnostico], ['Técnico', c.tecnico],
+    ['Inicio de revisión', c.inicioRevision], ['Fecha de cierre', c.fechaCierre], ['Creado por', c.creadoPor]
+  ];
+  if (c.faltantes) filas.unshift(['Accesorios faltantes', c.faltantes]);
+  if (c.bultosAvisados) filas.splice(4, 0, ['Bultos avisados', c.bultosAvisados]);
+  if (c.fechaRecepcion) filas.push(['Fecha de recepción', c.fechaRecepcion]);
+  if (c.agencia) filas.push(['Agencia', c.agencia + (c.guiaAgencia ? ' · guía ' + c.guiaAgencia : '')]);
+  if (c.llegadaDesde) filas.push(['Llegada estimada', c.llegadaDesde === c.llegadaHasta ? c.llegadaDesde : c.llegadaDesde + ' al ' + c.llegadaHasta]);
+  if (c.cambioAnticipado !== 'Sí' && /^O[CG]-/.test(String(c.guiaReemplazo || ''))) {
+    filas.unshift(['Equipo enviado al cliente', c.guiaReemplazo + (c.fechaReemplazo ? ' · salió ' + c.fechaReemplazo : '')]);
+  }
+  if (c.cambioAnticipado === 'Sí') {
+    filas.unshift(['Cambio anticipado', 'Reemplazo enviado ' + (c.fechaReemplazo || '') + (c.guiaReemplazo ? ', guía ' + c.guiaReemplazo : '') + '. No enviar otro.']);
+  }
+  $('#c-datos').innerHTML = filas.filter((f) => f[1]).map((f) => '<dt>' + esc(f[0]) + '</dt><dd' + (f[0] === 'Accesorios faltantes' ? ' class="alerta-txt"' : '') + '>' + esc(f[1]) + '</dd>').join('') +
+    (c.conjunta ? '<dt>Misma devolución</dt><dd>' + c.conjunta.split(',').map((x) => x.trim()).filter(String).map((x) =>
+      '<button type="button" class="link-caso" data-id="' + esc(x) + '">' + esc(x) + '</button>').join('') + '</dd>' : '');
+  const estadosRol = !tiene(ROLES.ADMIN) ? ['En revisión', 'Resuelto', 'Rechazado'] : LISTAS.estados;
+  llenarChips('estado', estadosRol, c.estado);
+  $('#c-diagnostico').value = c.diagnostico || '';
+  opciones($('#c-solucion'), LISTAS.soluciones || [], 'Sin solución todavía');
+  $('#c-solucion').value = c.solucion || '';
+  $('#c-actualizar').classList.toggle('oculto', !(puede('tecnico') || puede('almacen')));
+  $('#c-zona-tecnico').classList.toggle('oculto', !puede('tecnico'));
+  $('#c-zona-almacen').classList.toggle('oculto', !puede('almacen'));
+  const ubis = (LISTAS.ubicaciones || []).slice();
+  if (c.ubicacion && ubis.indexOf(c.ubicacion) < 0) ubis.unshift(c.ubicacion);
+  opciones($('#c-ubicacion'), ubis, 'Sin ubicación');
+  $('#c-ubicacion').value = c.ubicacion || '';
+  $('#c-recibir').classList.toggle('oculto', c.estado !== 'Por recibir' || !puede('almacen'));
+  prepararEnlace(c);
+  $('#c-imprimir').classList.toggle('oculto', c.estado === 'Por recibir' || !puede('almacen'));
+  const lf = $('#c-fotos');
+  if (c.fotos) { lf.href = c.fotos; lf.classList.remove('oculto'); } else lf.classList.add('oculto');
+}
+$('#c-guardar').addEventListener('click', async () => {
+  if (!casoActual) return;
+  const btn = $('#c-guardar'); btn.disabled = true; btn.textContent = 'Guardando…';
+  try {
+    const cambios = {};
+    if (puede('almacen')) cambios.ubicacion = $('#c-ubicacion').value.trim();
+    if (puede('tecnico')) {
+      const est = valorChips('estado');
+      if (est && est !== casoActual.estado) cambios.estado = est;
+      cambios.diagnostico = $('#c-diagnostico').value.trim();
+      cambios.solucion = $('#c-solucion').value;
+      const cierra = (cambios.estado || casoActual.estado) === 'Resuelto' || (cambios.estado || casoActual.estado) === 'Rechazado';
+      if (cierra && !cambios.solucion) throw new Error('Para cerrar el caso elige la solución aplicada.');
+    }
+    const c = await run('actualizarCaso', casoActual.id, cambios);
+    pintarCaso(c);
+    mensaje('ok', 'Cambios guardados en ' + c.id + '.');
+    if (cambios.estado === 'Resuelto' && DESP_API) ofrecerOC(c);
+    cargarBadge();
+  } catch (err) { mensaje('error', 'No se guardaron los cambios: ' + (err && err.message ? err.message : err)); }
+  finally { btn.disabled = false; btn.textContent = 'Guardar cambios'; }
+});
+$('#c-imprimir').addEventListener('click', () => { if (casoActual) abrirImpresion(casoActual); });
+$('#c-recibir').addEventListener('click', () => { if (casoActual) abrirRecepcion(casoActual.id); });
+
+/* ---------- enlace de seguimiento ---------- */
+let enlaceActual = { id: '', url: '', error: '' };
+function prepararEnlace(c) {
+  enlaceActual = { id: c.id, url: '', error: '' };
+  if (!EN_GOOGLE) return;
+  run('enlaceSeguimiento', c.id)
+    .then((url) => { if (enlaceActual.id === c.id) enlaceActual.url = url; })
+    .catch((err) => { if (enlaceActual.id === c.id) enlaceActual.error = (err && err.message) ? err.message : String(err); });
+}
+function textoSeguimiento() {
+  const c = casoActual || {};
+  return 'Hola' + (c.cliente ? ', ' + c.cliente : '') + '. Este es el seguimiento de su caso *' + c.id + '* con *Transline*' +
+    (c.modelo ? ' (' + c.modelo + ')' : '') + '. Puede ver el avance en este enlace:\n' + enlaceActual.url;
+}
+function enlaceListo() {
+  if (enlaceActual.url) return true;
+  mensaje(enlaceActual.error ? 'error' : 'info', enlaceActual.error || 'Preparando el enlace, intenta en un segundo.');
+  return false;
+}
+$('#c-compartir-wa').addEventListener('click', () => { if (enlaceListo()) compartirWhatsApp(textoSeguimiento()); });
+$('#c-compartir-copiar').addEventListener('click', () => { if (enlaceListo()) copiarTexto(enlaceActual.url, 'Enlace copiado. Pégalo en el chat del cliente o de quien lo necesite.'); });
+
+/* ---------- etiquetas ---------- */
+let impresionActual = null;
+
+function qrDataUrl(texto) {
+  const div = document.createElement('div');
+  new QRCode(div, { text: texto, width: 320, height: 320, correctLevel: QRCode.CorrectLevel.M });
+  const canvas = div.querySelector('canvas');
+  if (canvas) return canvas.toDataURL('image/png');
+  const img = div.querySelector('img');
+  return img ? img.src : '';
+}
+
+function etiquetaHTML(c, n, total, qr) {
+  return '<div class="label">' +
+    '<div class="qr"><img alt="Código QR del caso" src="' + qr + '"><small>Escanea para ver el caso</small></div>' +
+    '<div class="der">' +
+      '<div class="cab-et"><img class="logo" alt="Transline" src="' + LOGO_BN + '"><span class="tipo-et">DEVOLUCIÓN</span></div>' +
+      '<div class="gar">' + esc(c.id) + '</div>' +
+      '<div class="bulto">Bulto ' + n + ' de ' + total + '</div>' +
+      '<div class="txt">' + esc(c.cliente) + '</div>' +
+      '<div class="txt">' + esc(c.modelo) + (c.fecha ? ' · ' + esc(c.fecha) : '') + '</div>' +
+      '<div class="pie">No mover sin registro</div>' +
+    '</div></div>';
+}
+
+function abrirImpresion(entrada) {
+  const casos = [].concat(entrada);
+  impresionActual = {
+    grupos: casos.map((c) => ({ caso: c, total: Math.max(1, Number(c.bultos) || 1), qr: qrDataUrl(URL_APP + '?caso=' + encodeURIComponent(c.id)) }))
+  };
+  const totalEt = impresionActual.grupos.reduce((s, g) => s + g.total, 0);
+  $('#i-titulo').textContent = casos.map((c) => c.id).join(' · ') + ' · ' + totalEt + (totalEt === 1 ? ' etiqueta' : ' etiquetas');
+  let ops = '<option value="todas">Todas (' + totalEt + ')</option>';
+  impresionActual.grupos.forEach((g, gi) => {
+    if (impresionActual.grupos.length > 1) ops += '<option value="' + gi + ':0">Solo ' + esc(g.caso.id) + ' (' + g.total + ')</option>';
+    for (let n = 1; n <= g.total; n++) ops += '<option value="' + gi + ':' + n + '">' + esc(g.caso.id) + ' · bulto ' + n + ' de ' + g.total + '</option>';
+  });
+  $('#i-cual').innerHTML = ops;
+  $('#i-despues').classList.add('oculto');
+  pintarVista();
+  mostrar('imprimir', 'Imprimir etiquetas');
+}
+function etiquetasAImprimir() {
+  const v = $('#i-cual').value;
+  const out = [];
+  impresionActual.grupos.forEach((g, gi) => {
+    for (let n = 1; n <= g.total; n++) {
+      if (v === 'todas') { out.push({ g: g, n: n }); continue; }
+      const [vg, vn] = v.split(':').map(Number);
+      if (vg === gi && (vn === 0 || vn === n)) out.push({ g: g, n: n });
+    }
+  });
+  return out;
+}
+function pintarVista() {
+  const lista = etiquetasAImprimir();
+  $('#i-prev').innerHTML = lista.slice(0, 3).map((x) => etiquetaHTML(x.g.caso, x.n, x.g.total, x.g.qr)).join('') +
+    (lista.length > 3 ? '<div class="meta" style="color:var(--suave)">y ' + (lista.length - 3) + ' más</div>' : '');
+}
+$('#i-cual').addEventListener('change', pintarVista);
+$('#i-imprimir').addEventListener('click', () => {
+  $('#print-area').innerHTML = etiquetasAImprimir().map((x) => etiquetaHTML(x.g.caso, x.n, x.g.total, x.g.qr)).join('');
+  const imgs = [...document.querySelectorAll('#print-area img')];
+  Promise.all(imgs.map((i) => i.complete ? Promise.resolve() : new Promise((r) => { i.onload = i.onerror = r; }))).then(async () => {
+    window.print();
+    // Al imprimir, el caso sale solo de «Por imprimir» y el contador baja
+    const ids = impresionActual.grupos.map((g) => g.caso.id).filter((id) => id !== 'GAR-0000');
+    if (!ids.length) return;
+    try {
+      for (const id of ids) await run('marcarImpresas', id);
+      $('#i-despues-txt').textContent = 'Listo: ' + ids.join(', ') + ' salió de «Por imprimir». Si alguna etiqueta salió mal, elige el bulto arriba y vuelve a imprimirla.';
+      $('#i-despues').classList.remove('oculto');
+      cargarBadge();
+    } catch (err) { mensaje('error', 'Se imprimió, pero no se pudo actualizar la lista de pendientes.'); }
+  });
+});
+$('#i-volver').addEventListener('click', () => { mostrar('pendientes', 'Por imprimir'); cargarPendientes(); });
+$('#btn-prueba').addEventListener('click', () => {
+  abrirImpresion({ id: 'GAR-0000', cliente: 'Etiqueta de prueba', modelo: 'Reflector Solar 1500W', fecha: hoyTexto(), bultos: 1 });
+});
+
+/* ---------- OCA y OC (conexión con Despachos) ---------- */
+const DESP_API = (window.TL_CONFIG && window.TL_CONFIG.DESPACHOS_API_URL) || '';
+let ocaEnCurso = '';
+let ocaLista = [];
+const ocaDescartadas = new Set();
+async function despachosApi(body) {
+  const r = await fetch(DESP_API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ pin: SESION.pin }, body)) });
+  const j = await r.json(); if (!j.ok) throw new Error(j.error || 'error'); return j;
+}
+function ventana(html, si, no) {
+  return new Promise((resolve) => {
+    const f = document.createElement('div'); f.className = 'vmodal-fondo';
+    f.innerHTML = '<div class="vmodal" role="dialog" aria-modal="true">' + html + '<div class="bb"><button type="button" class="no">' + esc(no || 'No') + '</button><button type="button" class="si">' + esc(si || 'Sí') + '</button></div></div>';
+    document.body.appendChild(f);
+    const fin = (ok) => { const datos = {}; f.querySelectorAll('[data-k]').forEach((el) => { datos[el.dataset.k] = el.value; }); f.remove(); resolve({ ok: ok, datos: datos }); };
+    f.querySelector('.no').onclick = () => fin(false); f.querySelector('.si').onclick = () => fin(true);
+  });
+}
+async function cargarOCA(soloBadge) {
+  try {
+    const r = await fetch(DESP_API + '?action=ocaPendientes&pin=' + encodeURIComponent(SESION.pin)); const j = await r.json();
+    const l = j.ok ? j.data : [];
+    ocaLista = l; pintarAvisoOCA();
+    const b = $('#badge-oca'); b.textContent = l.length; b.classList.toggle('oculto', !l.length);
+    if (soloBadge) return;
+    const el = $('#lista-pendreg');
+    el.innerHTML = l.length ? '' : '<div class="aviso">No hay cambios anticipados pendientes. 👍</div>';
+    l.forEach((o) => {
+      const d = document.createElement('div'); d.className = 'oca' + (o.vencida ? ' vencida' : '');
+      d.innerHTML = '<div class="cod">' + esc(o.codigo) + (o.caso ? ' · ' + esc(o.caso) : '') + '</div>' +
+        '<div class="meta">' + esc(o.cliente || 'Cliente') + (o.telefono ? ' · ' + esc(o.telefono) : '') + ' · Vendedor: ' + esc(o.vendedor) + ' · Salió el ' + esc(o.salio) + '</div>' +
+        '<div class="dev">↩️ Debe devolver: <b>' + (o.devolver ? o.devolver.q + ' × ' + esc(o.devolver.modelo) : '—') + '</b></div>' +
+        '<div class="meta">Se le envió: ' + (o.enviado || []).map((x) => x.q + ' × ' + esc(x.p)).join(', ') + '</div>' +
+        (o.vencida ? '<span class="alerta-txt">⚠️ Han pasado ' + o.dias + ' días: avisa al vendedor.</span>' : '<div class="meta">' + o.dias + ' días desde que salió</div>') +
+        '<div class="btns">' + (o.caso ? '<button type="button" data-a="ya">Ya llegó: marcar como recibido</button><button type="button" class="sec" data-a="abrir">Abrir ' + esc(o.caso) + '</button>'
+          : '<button type="button" data-a="reg">Registrar cambio</button>') + '</div>';
+      const on = (a, fn) => { const x = d.querySelector('[data-a="' + a + '"]'); if (x) x.onclick = fn; };
+      on('reg', () => registrarDesdeOCA(o));
+      on('abrir', () => abrirCaso(o.caso));
+      on('ya', async () => {
+        const r2 = await ventana('<h2>¿Llegó el equipo con falla de ' + esc(o.codigo) + '?</h2><p>Se marcará como recibido en el caso ' + esc(o.caso) + '. Recuerda confirmar también su recepción en el caso.</p>', 'Sí, llegó', 'No');
+        if (!r2.ok) return;
+        try { await despachosApi({ action: 'vincularOCA', codigo: o.codigo, caso: o.caso }); mensaje('ok', o.codigo + ' marcado como recibido.'); cargarOCA(); }
+        catch (err) { mensaje('error', 'No se pudo marcar: ' + err.message); }
+      });
+      el.appendChild(d);
+    });
+  } catch (err) { if (!soloBadge) $('#lista-pendreg').innerHTML = '<div class="aviso">No se pudo consultar Despachos. Revisa el internet.</div>'; }
+}
+function pintarAvisoOCA() {
+  const a = $('#aviso-oca'); if (!a) return;
+  const n = ocaLista.length;
+  a.classList.toggle('oculto', !n || !!ocaEnCurso || !DESP_API);
+  if (!n) return;
+  a.innerHTML = '🔁 <b>¿Este registro es de un cambio anticipado?</b> Hay ' + n + ' OCA esperando su equipo con falla. Si es uno de ellos, ábrelo desde la lista y el formulario se llena solo: no tendrás que escribir todo.<br><button type="button">Ver cambios pendientes</button>';
+  a.querySelector('button').onclick = () => { mostrar('pendreg', 'Cambios pendientes de registro'); cargarOCA(); };
+}
+/** Busca una OCA pendiente parecida al registro: mismo teléfono, o nombre parecido y mismo modelo. */
+function buscarOCAParecida(d) {
+  const tokens = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().split(/[^A-Z0-9]+/).filter((x) => x.length >= 3);
+  const tel = (t) => String(t || '').replace(/\D/g, '').slice(-9);
+  const nd = tokens(d.cliente), td = tel(d.telefono), modelos = d.equipos.map((x) => String(x.modelo || '').toUpperCase());
+  let mejor = null, puntos = 0;
+  ocaLista.forEach((o) => {
+    if (ocaDescartadas.has(o.codigo)) return;
+    let p = 0;
+    if (td.length === 9 && td === tel(o.telefono)) p += 3;
+    const no = tokens(o.cliente), comunes = nd.filter((x) => no.indexOf(x) >= 0).length;
+    if (comunes >= 2 || (comunes === 1 && Math.min(nd.length, no.length) === 1)) p += 2;
+    if (o.devolver && modelos.indexOf(String(o.devolver.modelo || '').toUpperCase()) >= 0) p += 2;
+    if (p >= 3 && p > puntos) { mejor = o; puntos = p; }
+  });
+  return mejor;
+}
+function registrarDesdeOCA(o) {
+  mostrar('registrar', 'Registrar cambio · ' + o.codigo);
+  const p = String(o.salio || '').split('/');
+  restaurarBorrador({
+    chips: { modo: 'Llegó al almacén', tipo: 'Cambio', cambioAnticipado: 'Sí' },
+    campos: { cliente: o.cliente, telefono: o.telefono, vendedor: o.vendedor, fechaReemplazo: p.length === 3 ? p[2] + '-' + p[1] + '-' + p[0] : '', guiaReemplazo: o.codigo },
+    equipos: [{ modelo: o.devolver ? o.devolver.modelo : '', cantidad: o.devolver ? o.devolver.q : 1, bultos: 1 }]
+  });
+  ocaEnCurso = o.codigo;
+  mensaje('info', 'Formulario lleno con los datos de ' + o.codigo + '. Revisa el modelo, los accesorios y la falla, y guarda.');
+}
+async function ofrecerOC(c) {
+  const r = await ventana('<h2>¿Hay que enviar un equipo al cliente?</h2><p>Si el caso ' + esc(c.id) + ' se resolvió con un reemplazo o el mismo equipo reparado, se crea una orden de garantía (OG) que aparecerá en Alistar pedidos.</p>', 'Sí, enviar', 'No');
+  if (!r.ok) return;
+  const modelos = (LISTAS.modelos || []).slice(); if (c.modelo && modelos.indexOf(c.modelo) < 0) modelos.unshift(c.modelo);
+  const r2 = await ventana('<h2>¿Qué sale para ' + esc(c.cliente || 'el cliente') + '?</h2>' +
+    '<label>Equipo</label><select data-k="modelo">' + modelos.map((m) => '<option' + (m === c.modelo ? ' selected' : '') + '>' + esc(m) + '</option>').join('') + '</select>' +
+    '<label>Cantidad</label><input data-k="q" type="tel" inputmode="numeric" value="' + esc(c.cantidad || 1) + '">' +
+    '<label>Nota para el almacén (opcional)</label><input data-k="nota" type="text" placeholder="Ej.: es el mismo equipo reparado">', 'Crear orden de garantía', 'Cancelar');
+  if (!r2.ok) return;
+  try {
+    const j = await despachosApi({ action: 'crearOC', caso: c.id, cliente: c.cliente, telefono: c.telefono, vendedor: c.vendedor,
+      productos: [{ p: r2.datos.modelo, q: r2.datos.q }], nota: r2.datos.nota, idc: 'oc-' + c.id + '-' + Date.now() });
+    mensaje('ok', (j.repetida ? 'Ya existía la orden de garantía ' : 'Se creó la orden de garantía ') + j.orden.codigo + '. El vendedor ' + (c.vendedor || '') + ' completará los datos de envío y aparecerá en Alistar pedidos.');
+  } catch (err) { mensaje('error', 'No se pudo crear la orden de garantía: ' + err.message); }
+}
+
+/* ---------- corrección de datos de un caso (cada rol corrige lo suyo) ---------- */
+document.addEventListener('click', (e) => { if (e.target && e.target.id === 'c-corregir') corregirCaso(); });
+const CAMPOS_CORR = {
+  cliente: ['Cliente', 'text'], telefono: ['Teléfono', 'tel'], comprobante: ['Comprobante de compra', 'text'], fechaCompra: ['Fecha de compra', 'date'],
+  agencia: ['Agencia', 'text'], guiaAgencia: ['Guía de la agencia', 'text'], fechaEnvio: ['Fecha de envío', 'date'],
+  bultos: ['Bultos', 'num'], recibidoPor: ['Recibido por', 'text'], comoLlego: ['Cómo llegó', 'text'], estadoLlegada: ['Estado de llegada', 'text'],
+  accesorios: ['Accesorios', 'text'], ubicacion: ['Ubicación', 'text'], faltantes: ['Faltantes', 'text'], serie: ['N° de serie', 'text'],
+  vendedor: ['Vendedor', 'text'], modelo: ['Modelo', 'modelo'], cantidad: ['Cantidad', 'num'], tipo: ['Tipo de caso', 'tipo'] };
+let camposMios = null;
+async function camposPermitidos() { if (!camposMios) { try { camposMios = await run('camposCorregibles'); } catch (e) { camposMios = []; } } return camposMios; }
+function aISO(t) { const p = String(t || '').split('/'); return p.length === 3 ? p[2].slice(0, 4) + '-' + p[1].padStart(2, '0') + '-' + p[0].padStart(2, '0') : ''; }
+async function corregirCaso() {
+  const c = casoActual; if (!c) return;
+  const campos = await camposPermitidos();
+  if (!campos.length) { mensaje('error', 'Tu usuario no puede corregir datos de este caso.'); return; }
+  const campo = (k) => {
+    const [nombre, tipo] = CAMPOS_CORR[k], val = c[k] == null ? '' : String(c[k]);
+    let input;
+    if (tipo === 'modelo') input = '<select data-k="' + k + '">' + (LISTAS.modelos || []).concat(LISTAS.modelos.indexOf(val) < 0 && val ? [val] : []).map((m) => '<option' + (m === val ? ' selected' : '') + '>' + esc(m) + '</option>').join('') + '</select>';
+    else if (tipo === 'tipo') input = '<select data-k="' + k + '">' + LISTAS.tipos.map((m) => '<option' + (m === val ? ' selected' : '') + '>' + esc(m) + '</option>').join('') + '</select>';
+    else input = '<input data-k="' + k + '" type="' + (tipo === 'date' ? 'date' : (tipo === 'num' ? 'tel' : 'text')) + '"' + (tipo === 'num' ? ' inputmode="numeric"' : '') + ' value="' + esc(tipo === 'date' ? aISO(val) : val) + '">';
+    return '<label>' + esc(nombre) + '</label>' + input;
+  };
+  const r = await ventana('<h2>Corregir ' + esc(c.id) + '</h2><p>Solo aparecen los datos que tu usuario puede corregir. Cada cambio queda registrado con tu nombre.</p>' +
+    '<div style="max-height:46vh;overflow:auto;padding-right:4px">' + campos.filter((k) => CAMPOS_CORR[k]).map(campo).join('') + '</div>' +
+    '<label>Motivo de la corrección</label><input data-k="__motivo" type="text" placeholder="Ej.: el nombre del cliente estaba mal escrito">', 'Guardar corrección', 'Cancelar');
+  if (!r.ok) return;
+  const cambios = {};
+  campos.forEach((k) => { if (r.datos[k] === undefined) return; const antes = CAMPOS_CORR[k][1] === 'date' ? aISO(c[k]) : String(c[k] == null ? '' : c[k]); if (String(r.datos[k]).trim() !== antes) cambios[k] = String(r.datos[k]).trim(); });
+  if (!Object.keys(cambios).length) { mensaje('info', 'No cambiaste ningún dato.'); return; }
+  if (String(r.datos.__motivo || '').trim().length < 5) { mensaje('error', 'Escribe el motivo de la corrección (al menos 5 letras).'); return; }
+  try { const nuevo = await run('corregirCaso', c.id, cambios, r.datos.__motivo); pintarCaso(nuevo); mensaje('ok', 'Corrección guardada en ' + c.id + '.' + (cambios.bultos && c.etiquetasImpresas ? ' Las etiquetas volvieron a "Por imprimir".' : '')); }
+  catch (err) { mensaje('error', err.message); }
+}
+
+/* ---------- navegación ---------- */
+document.querySelectorAll('nav.tabs button').forEach((b) => b.addEventListener('click', () => {
+  mensaje('', '');
+  const t = b.dataset.tab;
+  if (t === 'registrar') { mostrar('registrar', 'Registrar devolución'); refrescarPendientes().then(pintarDuplicados); }
+  if (t === 'revision') { mostrar('revision', 'Por revisar'); cargarRevision(); }
+  if (t === 'porrecibir') { mostrar('porrecibir', 'Por recibir'); cargarPorRecibir(); }
+  if (t === 'pendientes') { mostrar('pendientes', 'Por imprimir'); cargarPendientes(); }
+  if (t === 'buscar') { mostrar('buscar', 'Buscar caso'); buscar(); }
+  if (t === 'pendreg') { mostrar('pendreg', 'Cambios pendientes de registro'); cargarOCA(); }
+}));
+
+/* ---------- borrador automático del formulario ---------- */
+const GRUPOS_BORRADOR = ['modo', 'tipo', 'envioModo', 'comoLlego', 'estadoLlegada', 'cambioAnticipado'];
+function claveBorrador() { return 'tl_borrador_' + (SESION ? SESION.nombre : ''); }
+function leerBorrador() { try { return JSON.parse(localStorage.getItem(claveBorrador()) || 'null'); } catch (e) { return null; } }
+function borrarBorrador() { try { localStorage.removeItem(claveBorrador()); } catch (e) {} $('#borrador-aviso').classList.add('oculto'); }
+let tBorrador = null;
+function programarBorrador() { clearTimeout(tBorrador); tBorrador = setTimeout(guardarBorrador, 700); }
+function guardarBorrador() {
+  if (!SESION || $('#v-registrar').classList.contains('oculto')) return;
+  const f = $('#form');
+  const equipos = [...document.querySelectorAll('#equipos .equipo')].map((b) => ({
+    modelo: b.querySelector('.e-modelo').value, cantidad: b.querySelector('.e-cantidad').value, bultos: b.querySelector('.e-bultos').value,
+    series: b.querySelector('.e-series').value, falla: b.querySelector('.e-falla').value, obs: b.querySelector('.e-obs').value,
+    otro: b.querySelector('.e-otro').value,
+    recibidos: [...b.querySelectorAll('.e-kit .chip[aria-pressed="true"]')].map((c) => c.dataset.valor)
+  }));
+  const hayAlgo = f.cliente.value.trim() || equipos.some((e) => e.modelo || e.series || e.obs);
+  if (!hayAlgo) { try { localStorage.removeItem(claveBorrador()); } catch (e) {} return; }
+  const campos = {};
+  [...f.elements].forEach((el) => { if (el.name && el.type !== 'file') campos[el.name] = el.value; });
+  const chips = {};
+  GRUPOS_BORRADOR.forEach((g) => { chips[g] = valorChips(g); });
+  try { localStorage.setItem(claveBorrador(), JSON.stringify({ ts: Date.now(), campos: campos, chips: chips, equipos: equipos })); } catch (e) {}
+}
+function marcarChips(grupo, valor) {
+  const vals = [].concat(valor || []);
+  document.querySelectorAll('.chips[data-grupo="' + grupo + '"] .chip').forEach((c) => c.setAttribute('aria-pressed', vals.indexOf(c.dataset.valor) >= 0 ? 'true' : 'false'));
+}
+function restaurarBorrador(b) {
+  const f = $('#form');
+  GRUPOS_BORRADOR.forEach((g) => { if (b.chips && b.chips[g] !== undefined && b.chips[g] !== '') marcarChips(g, b.chips[g]); });
+  Object.keys(b.campos || {}).forEach((n) => { if (f.elements[n] && f.elements[n].type !== 'file') f.elements[n].value = b.campos[n]; });
+  $('#equipos').innerHTML = '';
+  (b.equipos && b.equipos.length ? b.equipos : [{}]).forEach((e) => {
+    agregarEquipo();
+    const bl = [...document.querySelectorAll('#equipos .equipo')].pop();
+    const sel = bl.querySelector('.e-modelo');
+    sel.value = e.modelo || '';
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+    bl.querySelector('.e-cantidad').value = e.cantidad || 1;
+    bl.querySelector('.e-bultos').value = e.bultos || 1;
+    bl.querySelector('.e-series').value = e.series || '';
+    bl.querySelector('.e-falla').value = e.falla || '';
+    bl.querySelector('.e-obs').value = e.obs || '';
+    bl.querySelector('.e-otro').value = e.otro || '';
+    bl.querySelectorAll('.e-kit .chip').forEach((c) => c.setAttribute('aria-pressed', (e.recibidos || []).indexOf(c.dataset.valor) >= 0 ? 'true' : 'false'));
+  });
+  $('#reemplazo').classList.toggle('oculto', valorChips('cambioAnticipado') !== 'Sí');
+  aplicarModo(); actualizarEnvio(); pintarDescTipo();
+  if (soloVendedor()) f.vendedor.value = SESION.nombre;
+  if (almacenSinAdmin()) f.recibidoPor.value = SESION.nombre;
+}
+function ofrecerBorrador() {
+  const b = leerBorrador();
+  if (!b) return;
+  const min = Math.round((Date.now() - b.ts) / 60000);
+  const hace = min < 1 ? 'hace un momento' : min < 60 ? 'hace ' + min + ' min' : 'hace ' + Math.round(min / 60) + ' h';
+  $('#borrador-txt').textContent = 'Tienes un registro sin terminar (' + hace + (b.campos && b.campos.cliente ? ', ' + b.campos.cliente : '') + ').';
+  $('#borrador-aviso').classList.remove('oculto');
+}
+$('#form').addEventListener('input', programarBorrador);
+$('#form').addEventListener('change', programarBorrador);
+$('#form').addEventListener('click', (e) => { if (e.target.closest('.chip, .btn-quitar, .btn-agregar')) programarBorrador(); });
+$('#borrador-continuar').addEventListener('click', () => {
+  const b = leerBorrador();
+  $('#borrador-aviso').classList.add('oculto');
+  if (b) { restaurarBorrador(b); mensaje('ok', 'Registro recuperado. Revisa los datos y continúa. Las fotos hay que volver a agregarlas.'); }
+});
+$('#borrador-descartar').addEventListener('click', borrarBorrador);
+window.addEventListener('pagehide', guardarBorrador);
+document.addEventListener('visibilitychange', () => { if (document.hidden) guardarBorrador(); });
+
+/* ---------- inicio ---------- */
+$('#btn-entrar').addEventListener('click', entrar);
+$('#pin').addEventListener('keydown', (e) => { if (e.key === 'Enter') entrar(); });
+$('#btn-salir').addEventListener('click', () => { guardarBorrador(); location.href = '../'; });
+
+let intervaloBadges = null;
+const VISTA_INICIAL = new URLSearchParams(location.search).get('vista');
+const VISTAS = {
+  registrar: { ok: () => puede('registrar'), abrir: () => { mostrar('registrar', 'Registrar devolución'); ofrecerBorrador(); } },
+  porrecibir: { ok: () => puede('almacen'), abrir: () => { mostrar('porrecibir', 'Por recibir'); cargarPorRecibir(); } },
+  pendientes: { ok: () => puede('almacen'), abrir: () => { mostrar('pendientes', 'Por imprimir'); cargarPendientes(); } },
+  revision: { ok: () => puede('revision'), abrir: () => { mostrar('revision', 'Por revisar'); cargarRevision(); } },
+  buscar: { ok: () => true, abrir: () => { mostrar('buscar', 'Buscar caso'); buscar(); } }
+};
+async function arrancar() {
+  aplicarRol();
+  LISTAS = LISTAS_MUESTRA;
+  try {
+    const [listas, url] = await Promise.all([run('obtenerListas'), run('urlApp')]);
+    LISTAS = listas;
+    URL_APP = url;
+  } catch (err) {
+    mensaje('error', 'No se pudieron cargar las listas de la hoja. Detalle: ' + (err && err.message ? err.message : err));
+    return;
+  }
+  prepararFormulario();
+  const caso = new URLSearchParams(location.search).get('caso');
+  if (caso) {
+    abrirCaso(String(caso).replace(/[^A-Za-z0-9-]/g, ''));
+    history.replaceState(null, '', location.pathname);
+  } else if (VISTA_INICIAL && VISTAS[VISTA_INICIAL] && VISTAS[VISTA_INICIAL].ok()) {
+    VISTAS[VISTA_INICIAL].abrir();
+    history.replaceState(null, '', location.pathname);
+  } else if (puede('registrar')) {
+    mostrar('registrar', 'Registrar devolución');
+    ofrecerBorrador();
+  } else {
+    mostrar('revision', 'Por revisar');
+    cargarRevision();
+  }
+  cargarBadge();
+  if (!intervaloBadges) {
+    intervaloBadges = setInterval(cargarBadge, 60000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) cargarBadge(); });
+  }
+}
+
+(function iniciar() {
+  LISTAS = LISTAS_MUESTRA;
+  if (!EN_GOOGLE) {
+    SESION = { pin: '', nombre: 'Vista previa', rol: ROLES.ADMIN };
+    aplicarRol();
+    prepararFormulario();
+    mostrar('registrar', 'Registrar devolución');
+    mensaje('info', 'Vista previa: falta poner la dirección del motor (Apps Script) en config.js.');
+    return;
+  }
+  // Usa el ingreso del portal Transline (un solo PIN para todos los módulos)
+  let portal = null;
+  try { portal = JSON.parse(localStorage.getItem('tl_portal') || 'null'); } catch (e) { portal = null; }
+  if (!portal || !portal.pin) { location.replace('../'); return; }
+  const rolDev = portal.modulos && portal.modulos.devoluciones;
+  if (!rolDev) {
+    document.querySelector('nav.tabs').classList.add('oculto');
+    mostrar('login', 'Devoluciones');
+    $('#v-login').innerHTML = '<div class="bloque login"><h2>Sin acceso</h2><p>Tu usuario no tiene un rol en Devoluciones. Pídelo a la administración.</p><a class="btn" href="../">Volver al inicio</a></div>';
+    return;
+  }
+  SESION = { pin: portal.pin, nombre: portal.nombre, rol: rolDev, roles: String(rolDev).split(',').map((x) => x.trim()).filter(String) };
+  arrancar();
+})();
+</script>
+</body>
+</html>
