@@ -56,3 +56,19 @@
 .clave-ruta b{font-size:1.35rem;letter-spacing:.12em}
 .pedido.bloq{opacity:.6;border-style:dashed}
 .pedido.bloq .chip.cobrar{background:#C0392B;color:#fff;font-size:.85rem;font-weight:700;padding:4px 12px;border-radius:999px}
+.unir-sep{position:relative;height:0;margin:-8px 0 8px;display:flex;justify-content:center;z-index:2}
+.unir-sep::before{content:"";position:absolute;left:8%;right:8%;top:50%;border-top:2px dashed var(--line)}
+.unir-sep button{position:relative;width:40px;height:40px;margin-top:-20px;border-radius:50%;border:2px solid #2981C4;background:var(--surface);color:#2981C4;font-size:1.5rem;font-weight:700;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.unir-sep button:hover{background:#2981C4;color:#fff}
+.ed-lista{max-height:240px;overflow:auto;border:1.5px solid var(--line);border-radius:10px;padding:4px 10px}
+.ed-fila{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--line);font-size:.95rem;cursor:pointer}
+.ed-fila:last-child{border-bottom:0}
+.ed-fila input{width:22px;height:22px;flex:none;accent-color:#2981C4;margin-top:2px}
+.hoja .meta .unida{color:#7C3AED;font-weight:600}
+.foto-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.foto-btns .foto-btn{margin-top:6px;font-size:.98rem;padding:14px 8px;text-align:center}
+.hr-print td.ag{background:#fff}
+.hr-print td.ag .ag-n{display:inline-block;font-size:11pt;font-weight:800;border:.5mm solid #000;padding:.6mm 1.6mm;margin-bottom:.6mm;letter-spacing:.2mm}
+.hr-print tr.par td.ag{background:#fff}
+.hoja .quien,.hoja .meta{color:var(--muted)}
+@media (prefers-color-scheme:dark){ .hoja .meta,.hoja .quien{color:#B9C6D6} }

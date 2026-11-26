@@ -15,12 +15,22 @@ function etiqueta(o,i,n){
   else if(c.destino==="Provincia") detalle="Agencia "+(c.agencia||"")+(c.sede?" · "+c.sede:"");
   else if(c.entrega==="Recojo en tienda") detalle="Recoge en tienda";
   else detalle="Entrega: Delivery";
-  let medio="";
-  if(a&&a.nombre) medio='<div class="att"><b>ATENCIÓN A:</b> '+esc(a.nombre)+'<br>DNI '+esc(a.doc)+' · Tel. '+esc(a.tel)+'</div>';
-  else medio='<p class="doc" style="margin-top:.8mm">Tel. '+esc(c.tel||"")+'</p>';
+  /* Solo en ventas con factura (y que no sean dropshipping) va el nombre de la empresa compradora.
+     En boleta, ticket o dropshipping la etiqueta lleva únicamente a quien recibe. */
+  const conEmpresa=c.comprobante==="Factura"&&o.canal!=="Dropshipping";
+  const recibe=a&&a.nombre?a:{nombre:c.nombre,doc:c.doc,tel:c.tel,tipo:c.tipoDoc==="RUC"?"Empresa":"Persona"};
+  let nombreEt, docEt, medio="";
+  if(conEmpresa){
+    nombreEt=c.nombre; docEt=(c.doc?(c.tipoDoc||"RUC")+" "+c.doc:"");
+    if(a&&a.nombre) medio='<div class="att"><b>ATENCIÓN A:</b> '+esc(a.nombre)+'<br>'+(a.tipo==="Empresa"?"RUC ":"DNI ")+esc(a.doc)+' · Tel. '+esc(a.tel)+'</div>';
+    else medio='<p class="doc" style="margin-top:.8mm">Tel. '+esc(c.tel||"")+'</p>';
+  } else {
+    nombreEt=recibe.nombre; docEt=recibe.doc?(recibe.tipo==="Empresa"?"RUC ":"DNI ")+recibe.doc:"";
+    medio='<p class="doc" style="margin-top:.8mm">Tel. '+esc(recibe.tel||"")+(recibe.contacto?' · Contacto: '+esc(recibe.contacto):'')+'</p>';
+  }
   if((c.destino==="Lima"&&c.entrega==="Delivery")||domProv) medio+='<p class="doc" style="margin-top:.6mm">'+esc(c.direccion||"")+(domProv&&c.distrito?", "+esc(c.distrito):"")+(c.referencia?'<br>Ref.: '+esc(c.referencia):'')+'</p>';
   return '<div class="et"><div class="top"><span class="brand">'+(window.TL_LOGO_ET?'<img src="'+TL_LOGO_ET+'" alt="Transline">':'TRANSLINE')+'</span><span class="tipo-et">'+(o.tipo&&o.tipo!=="OD"?"CAMBIO":"DESPACHO")+'</span><span style="display:flex;align-items:center"><span class="code">'+esc(o.codigo)+'<br>'+esc(fecha)+'</span><span class="bulto">BULTO '+i+'/'+n+'</span></span></div>'+
-    '<div class="mid"><div style="min-width:0"><p class="k">DESTINATARIO</p><p class="name">'+esc((c.nombre||"").toUpperCase())+'</p><p class="doc">'+esc(c.doc?(c.tipoDoc||"DNI")+' '+c.doc+' · ':'')+esc(c.comprobante||"")+'</p>'+medio+'</div>'+
+    '<div class="mid"><div style="min-width:0"><p class="k">DESTINATARIO</p><p class="name">'+esc((nombreEt||"").toUpperCase())+'</p><p class="doc">'+esc(docEt)+'</p>'+medio+'</div>'+
     '<div><div class="qr">'+qrSVG(qrURL(o))+'</div><div class="qrt">Escanea para ver la orden</div></div></div>'+
     '<div class="dest"><b>'+esc(TLtxt.lugar(c))+'</b><span>'+esc(detalle)+'</span></div>'+
     '<div class="foot"><span>Remitente: '+esc(TL.REMITENTE)+' · RUC '+esc(TL.RUC_REMITENTE)+'</span><span>'+esc((o.embalaje||"").toUpperCase())+'</span></div></div>';
@@ -39,5 +49,15 @@ function imprimir(lista){
   }).join("");
   setTimeout(()=>window.print(),80);
 }
+/* Texto de una línea de producto, con sus tubos si es de la línea Pastoral */
+window.TLtubo = function(x){
+  if(!x.tubo) return "";
+  const n=x.tubo.q||0, tipo=(x.tubo.tipo||"").toLowerCase();
+  return n ? "+ "+n+" tubo"+(n>1?"s":"")+(tipo?" "+tipo+(n>1?"s":""):"") : "sin tubo";
+};
+window.TLprod = function(x, conSku){
+  const t=TLtubo(x);
+  return x.q+" × "+x.p+(conSku!==false&&x.s?" ("+x.s+")":"")+(t?(t[0]==="+"?" "+t:" · "+t):"");
+};
 window.TLEtiq = { html: etiqueta, imprimir, flecha };
 })();

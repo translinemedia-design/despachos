@@ -43,12 +43,14 @@ function tarjeta(o,clase){
     '<div class="chips">'+(o.tipo&&o.tipo!=="OD"?'<span class="chip tipo">🔁 '+(o.tipo==="OCA"?"CAMBIO ANTICIPADO":"ENVÍO POR GARANTÍA")+(o.caso?' · '+esc(o.caso):'')+'</span>':'')+(o.embalaje?'<span class="chip emb">'+esc(o.embalaje.toUpperCase())+'</span>':'')+
       (o.pago==="Contraentrega"?'<span class="chip cobrar">CONTRAENTREGA · COBRAR</span>':'')+
       (PAGO_BLOQUEA.includes(o.pago)?'<span class="chip cobrar">⛔ FALTA EL PAGO: AÚN NO PUEDE SALIR</span>':'')+
+      (o.guia?'<span class="chip">🚚 GUÍA '+esc(o.guia.numero)+'</span>':'')+
+      (o.guia&&o.guia.bultos&&o.bultos&&+o.guia.bultos!==+o.bultos?'<span class="chip cobrar">⚠️ LA GUÍA DICE '+o.guia.bultos+' BULTOS</span>':'')+
       (o.clave?'<span class="chip emb">🔑 CLAVE AGENCIA: '+esc(o.clave)+'</span>':'')+
       (!o.c?'<span class="chip espera">Cliente aún no envía sus datos</span>':'')+
       (o.corregida?'<span class="chip cobrar">⚠️ PEDIDO CORREGIDO: REVISA LOS PRODUCTOS</span>':'')+
       (bloqueada(o)?'<span class="chip cobrar">⏳ ESPERA: SE PIDIÓ '+(o.sol.tipo==="anulacion"?"ANULAR":"CORREGIR")+' ESTE PEDIDO</span>':'')+
       (o.bultos&&o.estado!=="Pendiente"&&o.estado!=="Alistado"?'<span class="chip">'+o.bultos+' bulto'+(o.bultos>1?'s':'')+'</span>':'')+'</div>'+
-    '<ul class="prod">'+o.productos.map(x=>'<li><span class="q">'+x.q+' ×</span><span>'+esc(x.p)+(x.s?'<small>'+esc(x.s)+'</small>':'')+'</span></li>').join("")+'</ul>'+
+    '<ul class="prod">'+o.productos.map(x=>'<li><span class="q">'+x.q+' ×</span><span>'+esc(x.p)+(x.s?'<small>'+esc(x.s)+'</small>':'')+(x.tubo?'<span class="tubo-al'+(x.tubo.q?'':' no')+'">'+esc(TLtubo(x))+'</span>':'')+'</span></li>').join("")+'</ul>'+
     '<div class="total">'+total+' producto'+(total===1?'':'s')+' en total</div>'+
     (o.obs?'<div class="obs">📝 '+esc(o.obs)+'</div>':'')+
     (o.config&&o.config.fabrica?'<div class="cfg-box hecho"><b>⚙️ Va con la configuración de fábrica</b></div>':'')+

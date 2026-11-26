@@ -254,3 +254,22 @@ input:focus-visible,textarea:focus-visible,button:focus-visible,select:focus-vis
 .clave-box b{display:block;font-size:2rem;letter-spacing:.2em;color:var(--ink)}
 .chip-e.tipo{background:#EDE4FA;color:#4C2A85}
 .tlc-sel{width:100%;min-height:48px;font:inherit;font-size:1.05rem;border:1.5px solid var(--line);border-radius:10px;padding:0 10px;background:var(--surface);color:var(--ink)}
+.lines li.tubo-li{padding:4px 0 10px 12px;border-bottom:1px solid var(--line);gap:10px;flex-wrap:wrap;font-size:.9rem;color:var(--muted)}
+.seg-mini{display:inline-flex;gap:4px;background:var(--chip);padding:3px;border-radius:9px}
+.seg-mini button{font:inherit;font-size:.85rem;font-weight:700;border:0;border-radius:7px;padding:5px 14px;background:transparent;color:var(--ink);cursor:pointer}
+.seg-mini button[aria-pressed="true"]{background:var(--panel);color:var(--panel-ink)}
+.tubo-cambiar{background:none;border:0;padding:0;font:inherit;font-size:.8rem;color:var(--muted);text-decoration:underline;cursor:pointer;opacity:.75}
+.tubo-inp{width:56px;min-height:32px;padding:2px 6px;font-size:.9rem;text-align:center}
+.lines small.sin-stock{display:block;color:#B45309;font-weight:600;font-size:.75rem;margin-top:2px}
+.lines li.precio-li{padding:2px 0 8px 12px;border-bottom:0;gap:8px;flex-wrap:wrap;font-size:.85rem;color:var(--muted);align-items:center}
+.precio-li label{font-size:.8rem}
+.precio-in{display:inline-flex;align-items:center;gap:4px;font-weight:600;color:var(--ink)}
+.precio-in input{width:96px;min-height:34px;padding:2px 8px;font-size:.95rem;text-align:right}
+.precio-sub{font-weight:700;color:var(--ink)}
+/* Contraste: los recuadros de fondo claro siempre con texto oscuro (también en modo oscuro) */
+.sol-box,.aviso,.banner-corr,.clave-box{color:#3D2E00}
+.sol-box b,.aviso b,.banner-corr b,.sol-box span,.aviso span{color:inherit}
+.sol-box{background:#FFF3CD;border-color:#E0B341}
+.clave-box{background:#F1F6FB;color:#0F3456}
+.clave-box b{color:#0F3456}
+@media (prefers-color-scheme:dark){ .nota{color:#B9C6D6} .hint{color:#B9C6D6} }

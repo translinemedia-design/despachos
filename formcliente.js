@@ -48,10 +48,10 @@
     op = op || {};
     const AGS = (op.agencias && op.agencias.length ? op.agencias : AGENCIAS_BASE);
     const AGENCIAS = AGS.map(a => a.n).concat(["Otra"]);
-    const sinVenta = !!op.sinVenta;
-    const S = { comprobante: sinVenta ? "Sin venta" : "Boleta", destino: "Lima", entrega: "Delivery", entregaProv: "Recojo en agencia", agencia: AGENCIAS[0], aten: true };
+    const sinVenta = !!op.sinVenta, drop = !!op.dropship, fijo = ["Boleta", "Factura", "Ticket"].indexOf(op.comprobanteFijo) >= 0 ? op.comprobanteFijo : "";
+    const S = { comprobante: sinVenta ? "Sin venta" : (fijo || "Boleta"), destino: "Lima", entrega: "Delivery", entregaProv: "Recojo en agencia", agencia: AGENCIAS[0], aten: true };
     root.innerHTML =
-      '<fieldset><legend>1. Comprobante de pago</legend>' + (sinVenta ? '<div class="aviso" style="margin:0 0 10px">🔁 Envío por cambio o garantía: no se emite comprobante de venta.</div>' : seg("comprobante", ["Boleta", "Factura", "Ticket"], S.comprobante)) +
+      '<fieldset><legend>1. ' + (fijo === "Factura" ? "Datos de tu empresa" : (fijo || sinVenta ? "Tus datos" : "Comprobante de pago")) + '</legend>' + (sinVenta ? '<div class="aviso" style="margin:0 0 10px">🔁 Envío por cambio o garantía: no se emite comprobante de venta.</div>' : (fijo ? '' : seg("comprobante", ["Boleta", "Factura", "Ticket"], S.comprobante))) +
       '<div class="hint" id="fc-ticket-nota" hidden>Ticket de venta: el DNI es opcional, pero nos ayuda a registrarte como cliente.</div>' +
       '<div id="fc-boleta">' + campo("nombre", "Nombre y apellidos", 'type="text" autocomplete="name" placeholder="Ej.: Eduardo Ramírez Torres"') +
         campo("dni", "DNI o carné de extranjería", 'type="tel" inputmode="numeric" maxlength="12" placeholder="8 dígitos"') + '</div>' +
@@ -78,6 +78,7 @@
       '<fieldset><legend>3. ¿Quién recibe o recoge el pedido?</legend><div id="fc-aten-seg"></div>' +
       '<div id="fc-aten" hidden><p class="nota">Datos de la persona que recibe o recoge:</p>' +
         campo("aten-nombre", "Atención a (nombre y apellidos)", 'type="text" placeholder="Ej.: Juan Pérez Rojas"') +
+        '<div id="fc-aten-cto-box" hidden>' + campo("aten-contacto", "Persona de contacto (opcional)", 'type="text" placeholder="Ej.: Juan Pérez, almacén"') + '</div>' +
         '<div class="row2"><div>' + campo("aten-dni", "DNI", 'type="tel" inputmode="numeric" maxlength="12" placeholder="8 dígitos"') + '</div>' +
         '<div>' + campo("aten-tel", "Teléfono", 'type="tel" inputmode="tel" maxlength="12" placeholder="9 dígitos"') + '</div></div></div>' +
       '</fieldset>';
@@ -88,10 +89,22 @@
 
     function pintarAten() {
       const f = S.comprobante === "Factura";
-      const ops = f ? ["Atención a una persona", "Solo a nombre de la empresa"] : ["Atención a otra persona", "Recibe el mismo comprador"];
-      $("#fc-aten-seg").innerHTML = seg("aten", ops, S.aten ? ops[0] : ops[1]);
-      $("#fc-aten-seg .seg").querySelectorAll("button").forEach((b, i) => b.onclick = () => { S.aten = i === 0; pintarAten(); disparar(); });
+      let ops;
+      if (drop) ops = ["Atención a una persona", "Atención a una empresa"];        // dropshipping: siempre hay un destinatario final
+      else ops = f ? ["Atención a una persona", "Solo a nombre de la empresa"] : ["Atención a otra persona", "Recibe el mismo comprador"];
+      if (drop) S.aten = true;
+      const marcado = drop ? (S.atenTipo === "Empresa" ? ops[1] : ops[0]) : (S.aten ? ops[0] : ops[1]);
+      $("#fc-aten-seg").innerHTML = (drop ? '<p class="nota" style="margin:0 0 8px">Dropshipping: el comprobante es para el distribuidor; aquí van los datos de quien recibe el pedido.</p>' : '') + seg("aten", ops, marcado);
+      $("#fc-aten-seg .seg").querySelectorAll("button").forEach((b, i) => b.onclick = () => {
+        if (drop) S.atenTipo = i === 1 ? "Empresa" : "Persona"; else S.aten = i === 0;
+        pintarAten(); disparar(); });
       $("#fc-aten").hidden = !S.aten;
+      const emp = drop && S.atenTipo === "Empresa";
+      const lbl = (id, t) => { const l = root.querySelector('label[for="fc-' + id + '"]'); if (l) l.textContent = t; };
+      lbl("aten-nombre", emp ? "Razón social de la empresa que recibe" : "Atención a (nombre y apellidos)");
+      lbl("aten-dni", emp ? "RUC" : "DNI");
+      $("#fc-aten-dni").maxLength = emp ? 11 : 12; $("#fc-aten-dni").placeholder = emp ? "11 dígitos" : "8 dígitos";
+      $("#fc-aten-cto-box").hidden = !emp;
     }
     function pintar() {
       root.querySelectorAll(".seg[data-seg]").forEach(sg => {
@@ -99,7 +112,8 @@
         sg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === S[k]));
       });
       $("#fc-boleta").hidden = S.comprobante === "Factura";
-      $("#fc-ticket-nota").hidden = S.comprobante !== "Ticket";
+      $("#fc-ticket-nota").hidden = S.comprobante !== "Ticket" || !!fijo;
+      if (fijo) S.comprobante = fijo;
       if (sinVenta) S.comprobante = "Sin venta";
       const lblDni = root.querySelector('label[for="fc-dni"]'); if (lblDni) lblDni.textContent = (S.comprobante === "Ticket" || S.comprobante === "Sin venta") ? "DNI (opcional)" : "DNI o carné de extranjería";
       $("#fc-factura").hidden = S.comprobante !== "Factura";
@@ -176,7 +190,7 @@
         if (S.entregaProv === "Entrega a domicilio") { c.distrito = v("pdistrito"); c.direccion = v("pdireccion"); c.referencia = v("preferencia"); }
         else c.sede = v("sede");
       }
-      c.atencion = S.aten ? { nombre: v("aten-nombre"), doc: dig("aten-dni"), tel: dig("aten-tel") } : null;
+      c.atencion = S.aten ? { tipo: drop && S.atenTipo === "Empresa" ? "Empresa" : "Persona", nombre: v("aten-nombre"), doc: dig("aten-dni"), tel: dig("aten-tel"), contacto: drop && S.atenTipo === "Empresa" ? v("aten-contacto") : "" } : null;
       return c;
     }
     function marcar(id, msg) { const e = root.querySelector('[data-err="' + id + '"]'); if (e) { e.textContent = msg; e.classList.add("bad"); } }
@@ -208,7 +222,7 @@
       }
       if (c.atencion) {
         if (!c.atencion.nombre) m("aten-nombre", "Ingresa el nombre de quien recibe.");
-        if (!/^\d{8,12}$/.test(c.atencion.doc)) m("aten-dni", "DNI de 8 dígitos.");
+        if (c.atencion.tipo === "Empresa" ? !/^(10|15|17|20)\d{9}$/.test(c.atencion.doc) : !/^\d{8,12}$/.test(c.atencion.doc)) m("aten-dni", c.atencion.tipo === "Empresa" ? "RUC de 11 dígitos." : "DNI de 8 dígitos.");
         if (c.atencion.tel.length < 9) m("aten-tel", "Teléfono de 9 dígitos.");
       }
       if (malos.length) { const el = root.querySelector("#fc-" + malos[0]) || root.querySelector('[data-err="' + malos[0] + '"]'); if (el) { el.scrollIntoView({ block: "center", behavior: "smooth" }); if (el.focus) el.focus({ preventScroll: true }); } }
@@ -217,7 +231,7 @@
     function cargar(c) {
       if (!c) return;
       if (!c.nombre) { if (c.destino) { S.destino = c.destino === "Provincia" ? "Provincia" : "Lima"; pintar(); } return; }   // solo destino sugerido
-      S.comprobante = sinVenta ? "Sin venta" : (c.comprobante === "Factura" ? "Factura" : (c.comprobante === "Ticket" ? "Ticket" : "Boleta"));
+      S.comprobante = sinVenta ? "Sin venta" : fijo ? fijo : (c.comprobante === "Factura" ? "Factura" : (c.comprobante === "Ticket" ? "Ticket" : "Boleta"));
       S.destino = c.destino === "Provincia" ? "Provincia" : "Lima";
       S.entrega = c.entrega === "Recojo en tienda" ? "Recojo en tienda" : "Delivery";
       const set = (id, val) => { if ($("#fc-" + id)) $("#fc-" + id).value = val || ""; };
@@ -230,8 +244,9 @@
       }
       set("ciudad", c.ciudad); set("sede", c.sede);
       if (c.agencia) { if (AGENCIAS.includes(c.agencia)) S.agencia = c.agencia; else { S.agencia = "Otra"; set("agencia-otra", c.agencia); } }
-      S.aten = !!(c.atencion && c.atencion.nombre);
-      if (S.aten) { set("aten-nombre", c.atencion.nombre); set("aten-dni", c.atencion.doc); set("aten-tel", c.atencion.tel); }
+      S.aten = drop || !!(c.atencion && c.atencion.nombre);
+      S.atenTipo = c.atencion && c.atencion.tipo === "Empresa" ? "Empresa" : "Persona";
+      if (c.atencion && c.atencion.nombre) { set("aten-nombre", c.atencion.nombre); set("aten-dni", c.atencion.doc); set("aten-tel", c.atencion.tel); set("aten-contacto", c.atencion.contacto); }
       pintar();
     }
     pintar(); cargar(inicial);

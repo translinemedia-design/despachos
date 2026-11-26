@@ -80,3 +80,8 @@ body.alm{font-size:18px;background:var(--paper)}
 .tlc .stepper{display:inline-flex}
 .pedido .chip.tipo{background:#6D28D9;color:#fff}
 .pedido:has(.chip.tipo){border-left-color:#7C3AED}
+.tubo-al{display:inline-block;margin-top:4px;font-weight:700;font-size:.95rem;background:#DCEEFB;color:#14507E;border-radius:8px;padding:2px 10px}
+.tubo-al.no{background:var(--chip);color:var(--muted);font-weight:600}
+.alm-aviso,.pedido .obs,.cfg-box{color:#3D2E00}
+.cfg-box.hecho{color:#14532D}
+.alm-aviso a{color:#14507E;font-weight:700}

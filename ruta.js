@@ -25,7 +25,7 @@ function destino(o){ const c=o.c||{};
 function direccion(o){ const c=o.c||{};
   if(c.destino==="Provincia") return c.entrega==="Entrega a domicilio"?(c.direccion+(c.distrito?", "+c.distrito:"")+(c.referencia?" (Ref.: "+c.referencia+")":"")):("Agencia "+c.agencia+(c.sede?" · "+c.sede:""));
   return c.direccion?(c.direccion+(c.referencia?" (Ref.: "+c.referencia+")":"")):""; }
-function recibe(o){ const c=o.c||{}; return c.atencion&&c.atencion.nombre?{n:c.atencion.nombre,d:c.atencion.doc,t:c.atencion.tel}:{n:c.nombre,d:c.doc,t:c.tel}; }
+function recibe(o){ const c=o.c||{}; return c.atencion&&c.atencion.nombre?{n:c.atencion.nombre,d:c.atencion.doc,t:c.atencion.tel,tipo:c.atencion.tipo}:{n:c.nombre,d:c.doc,t:c.tel,tipo:c.tipoDoc==="RUC"?"Empresa":"Persona"}; }
 
 /* ---------- Armar ruta ---------- */
 const PAGO_BLOQUEA=["Pendiente","Adelanto · saldo antes de despachar"];
@@ -62,14 +62,23 @@ $("#crear-ruta").onclick=async()=>{
 };
 
 /* ---------- Hojas de ruta ---------- */
-const CLASE={"Por aprobar":"por","En ruta":"ruta","Completada":"ok","Anulada":"anul"};
+const CLASE={"Por aprobar":"por","En ruta":"ruta","Completada":"ok","Anulada":"anul","Unida":"anul"};
 function pintarHojas(){
   const el=$("#lista-hojas"); el.innerHTML="";
-  const visibles=rutas.filter(h=>h.estado!=="Anulada"||Date.now()-h.creado<86400000*2).slice(0,30);
+  const visibles=rutas.filter(h=>(h.estado!=="Anulada"&&h.estado!=="Unida")||Date.now()-h.creado<86400000*2).slice(0,30);
   const activas=rutas.filter(h=>h.estado==="Por aprobar"||h.estado==="En ruta").length;
   $("#n-hojas").textContent=activas; $("#n-hojas").classList.toggle("cero",!activas);
   if(!visibles.length){ el.innerHTML='<div class="alm-vacio">Todavía no hay hojas de ruta.</div>'; return; }
-  visibles.forEach(h=>{
+  const unible=h=>(h.estado==="Por aprobar"||h.estado==="En ruta")&&!h.ordenes.map(ord).some(o=>o&&o.estado==="Entregado");
+  const puedeOrganizar=rol("almacen","admin","supervisor");
+  visibles.forEach((h,ix)=>{
+    const prev=visibles[ix-1];
+    if(prev&&puedeOrganizar&&unible(prev)&&unible(h)){
+      const sep=document.createElement("div"); sep.className="unir-sep";
+      sep.innerHTML='<button type="button" title="Unir '+esc(prev.codigo)+' y '+esc(h.codigo)+'" aria-label="Unir '+esc(prev.codigo)+' y '+esc(h.codigo)+'">+</button>';
+      sep.querySelector("button").onclick=()=>unir(prev,h);
+      el.appendChild(sep);
+    }
     const os=h.ordenes.map(ord).filter(Boolean), hechas=os.filter(o=>o.estado==="Entregado").length;
     const d=document.createElement("div"); d.className="hoja";
     let html='<div class="cab"><span class="od">'+esc(h.codigo)+'</span><span class="est '+(CLASE[h.estado]||"")+'">'+esc(h.estado)+'</span>'+
@@ -82,11 +91,13 @@ function pintarHojas(){
       '<div class="acc">';
     html+='<button type="button" class="alm-btn sec" data-a="imp">🖨️ Imprimir hoja (A4)</button>';
     if(h.estado==="Por aprobar"&&rol("supervisor")) html+='<button type="button" class="alm-btn" data-a="aprobar">✓ Aprobar salida</button>';
+    if(unible(h)&&puedeOrganizar) html+='<button type="button" class="alm-btn sec" data-a="editar">✏️ Editar órdenes</button>';
     if(h.estado==="Por aprobar"&&rol("almacen","admin","supervisor")) html+='<button type="button" class="deshacer" data-a="anular">Anular esta hoja</button>';
     html+='</div>'+(h.estado==="Por aprobar"&&!rol("supervisor")?'<div class="quien" style="margin-top:8px">Un supervisor (Juan, Vilma, Paolo o Arturo) debe aprobar la salida desde su celular.</div>':'');
     d.innerHTML=html;
     const on=(a,fn)=>{const b=d.querySelector('[data-a="'+a+'"]'); if(b) b.onclick=fn;};
     on("imp",()=>imprimirHoja(h));
+    on("editar",()=>editarHoja(h));
     on("aprobar",async e=>{ const r=await TLConfirm({titulo:"¿Aprobar la salida de "+h.codigo+"?",texto:"Verifica que los bultos cargados coincidan con la hoja: "+os.reduce((a,o)=>a+(o.bultos||0),0)+" bultos en "+os.length+" órdenes.",si:"Sí, aprobar salida"}); if(!r.ok) return;
       e.target.disabled=true; try{ await api({action:"aprobarRuta",codigo:h.codigo}); toast("🚚 "+h.codigo+" en ruta"); await cargar(); }catch(err){ e.target.disabled=false; toast(msg(err)); } });
     on("anular",async()=>{ const r=await TLConfirm({titulo:"¿Anular "+h.codigo+"?",texto:"Las órdenes vuelven a quedar listas para otra hoja de ruta.",campo:{label:"Motivo",min:5},si:"Anular hoja",tono:"peligro"}); if(!r.ok) return;
@@ -94,17 +105,44 @@ function pintarHojas(){
     el.appendChild(d);
   });
 }
+/* Unir dos hojas: queda la más antigua con todas las órdenes y vuelve a "Por aprobar". */
+async function unir(a,b){
+  const destino=a.creado<b.creado?a:b, origen=destino===a?b:a;
+  const n=destino.ordenes.length+origen.ordenes.length;
+  const r=await TLConfirm({titulo:"¿Unir "+origen.codigo+" con "+destino.codigo+"?",
+    texto:"Quedará una sola hoja, "+destino.codigo+", con "+n+" órdenes (transportista: "+destino.transportista+"). "+(a.estado==="En ruta"||b.estado==="En ruta"?"La salida que ya estaba aprobada se cancela: ":"")+"un supervisor deberá aprobar la salida otra vez. Imprime la hoja después de unirla.",si:"Sí, unir",no:"No"});
+  if(!r.ok) return;
+  try{ await api({action:"unirRutas",destino:destino.codigo,origen:origen.codigo}); toast("🗂️ Hojas unidas en "+destino.codigo+": falta aprobar la salida"); await cargar(); }
+  catch(e){ toast(e.message==="con_entregas"?"No se puede: una de las hojas ya tiene entregas registradas.":msg(e)); }
+}
+/* Editar: quitar órdenes de la hoja o agregar otras listas para salir. */
+async function editarHoja(h){
+  const actuales=h.ordenes.map(ord).filter(Boolean), extra=listos();
+  const quitar=new Set(), agregar=new Set();
+  const fila=(o,dentro)=>'<label class="ed-fila"><input type="checkbox" data-c="'+esc(o.codigo)+'" data-d="'+(dentro?1:0)+'" '+(dentro?"checked":"")+'><span><b>'+esc(o.codigo)+'</b> · '+esc(recibe(o).n)+' · '+esc(destino(o))+'</span></label>';
+  const p=TLConfirm({titulo:"Editar "+h.codigo,
+    html:'<p>Desmarca para quitar una orden; marca las de abajo para agregarlas.'+(h.estado==="En ruta"?' Como la salida ya estaba aprobada, habrá que aprobarla otra vez.':'')+'</p>'+
+      '<div class="ed-lista">'+actuales.map(o=>fila(o,true)).join("")+'</div>'+
+      (extra.length?'<p style="margin-top:10px"><b>Listas para salir</b></p><div class="ed-lista">'+extra.map(o=>fila(o,false)).join("")+'</div>':''),
+    si:"Guardar cambios",no:"Cancelar"});
+  document.querySelectorAll(".tlc .ed-fila input").forEach(i=>i.onchange=()=>{ const c=i.dataset.c, dentro=i.dataset.d==="1";
+    if(dentro){ i.checked?quitar.delete(c):quitar.add(c); } else { i.checked?agregar.add(c):agregar.delete(c); } });
+  const r=await p; if(!r.ok) return;
+  if(!quitar.size&&!agregar.size){ toast("No hubo cambios"); return; }
+  try{ const j=await api({action:"editarRuta",codigo:h.codigo,quitar:[...quitar],agregar:[...agregar]}); toast("✏️ "+h.codigo+" actualizada"+(j.ruta.estado==="Por aprobar"?": falta aprobar la salida":"")); await cargar(); }
+  catch(e){ toast(e.message==="con_entregas"?"No se puede editar: ya hay entregas registradas.":msg(e)+(e.j&&e.j.codigo?" ("+e.j.codigo+")":"")); }
+}
 function imprimirHoja(h){
   const os=h.ordenes.map(ord).filter(o=>o&&o.estado!=="Anulada");
   const fecha=(h.fecha||"").split(" ")[0];
   const filas=os.map((o,i)=>{ const c=o.c||{}, r=recibe(o);
-    const desc=o.productos.map(x=>esc(x.p)).join("<br>"), cant=o.productos.map(x=>x.q).join("<br>");
+    const desc=o.productos.map(x=>esc(x.p)+(x.tubo&&x.tubo.q?' <b>+ '+x.tubo.q+' tubo'+(x.tubo.q>1?'s':'')+(x.tubo.tipo?' '+esc(x.tubo.tipo.toLowerCase())+(x.tubo.q>1?'s':''):'')+'</b>':'')).join("<br>"), cant=o.productos.map(x=>x.q).join("<br>");
     const transp=c.destino==="Provincia"?(c.entrega==="Entrega a domicilio"?"Agencia · domicilio":"Agencia"):(c.entrega==="Recojo en tienda"?"Recojo en tienda":"Delivery");
     return '<tr class="'+(i%2?"par":"")+'"><td class="n">'+(i+1)+'</td><td><b>'+esc(o.codigo)+'</b> · '+o.bultos+' bulto'+(o.bultos>1?'s':'')+'<br>'+desc+(o.pago==="Contraentrega"?'<br><span class="cobrar">COBRAR CONTRAENTREGA</span>':'')+'</td><td style="text-align:center">'+cant+'</td>'+
-      '<td>'+esc(c.nombre||"")+(c.doc?'<br>'+esc(c.tipoDoc||"")+' '+esc(c.doc):'')+'</td>'+
+      '<td>'+(c.comprobante==="Factura"&&o.canal!=="Dropshipping"?esc(c.nombre||"")+(c.doc?'<br>'+esc(c.tipoDoc||"")+' '+esc(c.doc):''):(r.tipo==="Empresa"?esc(r.n)+'<br>RUC '+esc(r.d):'—'))+'</td>'+
       '<td><div class="at"><span>ID</span><span>'+esc(r.n||"")+'</span><span>DNI</span><span>'+esc(r.d||"")+'</span><span>CEL</span><span>'+esc(r.t||"")+'</span></div></td>'+
       '<td>'+esc(c.destino==="Provincia"?c.ciudad:"Lima"+(c.distrito?" – "+c.distrito:""))+(direccion(o)&&c.destino!=="Provincia"?'<br>'+esc(direccion(o)):"")+(c.destino==="Provincia"&&c.entrega==="Entrega a domicilio"?'<br>'+esc(direccion(o)):"")+'</td>'+
-      '<td>'+esc(c.destino==="Provincia"?c.agencia+(c.sede&&c.entrega!=="Entrega a domicilio"?" · "+c.sede:""):"—")+(o.clave?'<br><b>Clave: '+esc(o.clave)+'</b>':'')+'</td><td>'+esc(transp)+'</td><td></td></tr>'; }).join("");
+      '<td class="ag">'+(c.destino==="Provincia"?'<span class="ag-n">'+esc((c.agencia||"").toUpperCase())+'</span>'+(c.sede&&c.entrega!=="Entrega a domicilio"?'<br>'+esc(c.sede):''):"—")+(o.clave?'<br><b>Clave: '+esc(o.clave)+'</b>':'')+'</td><td>'+esc(transp)+'</td><td></td></tr>'; }).join("");
   $("#print-area").innerHTML='<div class="hr-print"><div class="top"><div>'+(window.TL_LOGO_ET?'<img src="'+TL_LOGO_ET+'" alt="Transline">':'<b>TRANSLINE</b>')+'<small>Almacén principal - SJL</small></div>'+
     '<div><div class="caja">HOJA DE RUTA</div><div class="datos"><span>FECHA</span><span>'+esc(fecha)+'</span><span>N°</span><span>'+esc(h.codigo)+'</span></div></div></div>'+
     '<table><thead><tr><th>N°</th><th>DESCRIPCIÓN</th><th>CANT</th><th>RAZÓN SOCIAL</th><th>ATENCIÓN</th><th>DESTINO</th><th>AGENCIA</th><th>TRANSPORTE</th><th style="width:28mm">FIRMA / SELLO</th></tr></thead><tbody>'+filas+'</tbody></table>'+
@@ -127,14 +165,14 @@ function pintarMia(){
       d.innerHTML='<div><span class="num">'+(i+1)+'</span><span class="od">'+esc(o.codigo)+'</span></div>'+
         '<div class="cli">'+esc(cc.nombre||"")+'</div>'+(cc.atencion&&cc.atencion.nombre?'<div class="lin">Atención a: <b>'+esc(cc.atencion.nombre)+'</b></div>':'')+
         '<div class="lin">📍 '+esc(destino(o))+'</div>'+(direccion(o)?'<div class="lin">'+esc(direccion(o))+'</div>':'')+
-        '<div class="lin">📦 '+o.bultos+' bulto'+(o.bultos>1?'s':'')+' · '+o.productos.map(x=>x.q+" × "+esc(x.p)).join(", ")+'</div>'+
+        '<div class="lin">📦 '+o.bultos+' bulto'+(o.bultos>1?'s':'')+' · '+o.productos.map(x=>esc(TLprod(x,false))).join(", ")+'</div>'+
         (o.pago==="Contraentrega"?'<div class="chips"><span class="chip cobrar">CONTRAENTREGA · COBRAR</span></div>':'')+
         (o.clave?'<div class="clave-ruta">🔑 Clave para la agencia: <b>'+esc(o.clave)+'</b></div>':'')+
         (r.t?'<a class="tel" href="tel:'+esc(r.t)+'">📞 Llamar a '+esc(r.n)+'</a>':'')+
         (hecha?'<div class="lin" style="margin-top:10px;color:#1E7F55;font-weight:700">✓ '+esc(o.entrega.tipo)+' · '+esc(o.entrega.f)+'</div><div class="fotos-prev">'+o.entrega.fotos.map(f=>'<a href="'+esc(f.url)+'" target="_blank" rel="noopener"><img alt="Evidencia" src="https://drive.google.com/thumbnail?id='+esc(f.id)+'&sz=w200"></a>').join("")+'</div>'
           :'<div class="acc">'+(cc.destino==="Provincia"&&cc.entrega!=="Entrega a domicilio"
-            ?'<button type="button" class="alm-btn azul ancho" data-t="Dejado en agencia">🏢 Dejado en agencia</button><button type="button" class="alm-btn sec" data-t="Entregado">✓ Entregado</button>'
-            :'<button type="button" class="alm-btn ancho" data-t="Entregado">✓ Entregado</button><button type="button" class="alm-btn sec" data-t="Dejado en agencia">🏢 Dejado en agencia</button>')+'</div>');
+            ?'<button type="button" class="alm-btn azul ancho" data-t="Dejado en agencia">🏢 Dejado en agencia</button>'
+            :'<button type="button" class="alm-btn ancho" data-t="Entregado">✓ Entregado</button>')+'</div>');
       d.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>registrar(o,b.dataset.t));
       el.appendChild(d); }); });
 }
@@ -148,10 +186,11 @@ async function registrar(o,tipo){
   const pintarPrev=()=>{ const p=document.querySelector(".tlc .fotos-prev"); if(p) p.innerHTML=fotos.map(f=>'<img alt="Foto" src="'+f+'">').join(""); };
   const promesa=TLConfirm({titulo:(tipo==="Entregado"?"✓ Entregado":"🏢 Dejado en agencia")+" · "+o.codigo,
     html:'<p>Toma <b>al menos una foto</b> de cómo quedan los equipos'+(tipo==="Dejado en agencia"?' y del comprobante o guía de la agencia':'')+'. Puedes agregar hasta 4.</p>'+
-      '<label class="foto-btn">📷 Tomar o elegir foto<input type="file" accept="image/*" capture="environment" multiple></label><div class="fotos-prev"></div>',
+      '<div class="foto-btns"><label class="foto-btn">📷 Tomar foto<input type="file" accept="image/*" capture="environment"></label>'+
+      '<label class="foto-btn">🖼️ Elegir de la galería<input type="file" accept="image/*" multiple></label></div><div class="fotos-prev"></div>',
     campo:{label:"Nota (opcional)",placeholder:"Ej.: recibió el vigilante, caja en buen estado",opcional:true},si:"Guardar",no:"Cancelar"});
-  const inp=document.querySelector(".tlc input[type=file]");          // la ventana ya existe: se conecta de inmediato
-  if(inp) inp.onchange=async()=>{ for(const f of [...inp.files].slice(0,4-fotos.length)){ try{ fotos.push(await comprimir(f)); }catch(e){} } inp.value=""; pintarPrev(); };
+  document.querySelectorAll(".tlc input[type=file]").forEach(inp=>{          // cámara o galería: la ventana ya existe
+    inp.onchange=async()=>{ for(const f of [...inp.files].slice(0,4-fotos.length)){ try{ fotos.push(await comprimir(f)); }catch(e){} } inp.value=""; pintarPrev(); }; });
   const r=await promesa; if(!r.ok) return;
   if(!fotos.length){ toast(MSGS.sin_fotos); return registrar(o,tipo); }
   toast("Subiendo fotos… no cierres la pantalla");

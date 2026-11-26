@@ -33,10 +33,10 @@
       <ul class="prods" id="p-prods"></ul>
     </div>
     <div class="aviso" id="p-aviso" hidden></div>
-    <p class="nota" style="margin:0 0 14px">Completa tus datos para emitir tu comprobante y preparar el envío. Te tomará menos de un minuto.</p>
+    <p class="nota" style="margin:0 0 14px">Completa tus datos para preparar tu pedido y su envío. Te tomará menos de un minuto.</p>
     <div id="form"></div>
     <button class="btn primary" type="button" id="enviar" style="width:100%;font-size:1.05rem;margin-top:6px">Registrar mis datos</button>
-    <p class="privacidad">Usaremos estos datos solo para emitir tu comprobante y enviar tu pedido.</p>
+    <p class="privacidad">Usaremos estos datos solo para tu pedido y su envío.</p>
   </section>
 
   <section id="v-ok" hidden>
@@ -83,10 +83,10 @@
       return;
     }
     if(orden.c){ $("#p-aviso").hidden=false; $("#p-aviso").textContent="Ya registraste tus datos. Puedes revisarlos y corregirlos antes de que preparemos tu pedido.";
-      if(!form) form = FormCliente($("#form"), orden.c, { agencias: agenciasLista, sinVenta: orden.tipo && orden.tipo !== "OD" });
+      if(!form) form = FormCliente($("#form"), orden.c, { agencias: agenciasLista, sinVenta: orden.tipo && orden.tipo !== "OD", dropship: orden.canal === "Dropshipping", comprobanteFijo: orden.compPrev });
       $("#v-form").hidden=true; $("#v-ok").hidden=false; $("#editar").hidden=false; $("#ok-txt").textContent="Tus datos ya están registrados."; mostrarClave(); return; }
     $("#v-form").hidden=false; $("#v-ok").hidden=true;
-    if(!form) form = FormCliente($("#form"), orden.c || (orden.destinoPrev ? { destino: orden.destinoPrev } : null), { agencias: agenciasLista, sinVenta: orden.tipo && orden.tipo !== "OD" });
+    if(!form) form = FormCliente($("#form"), orden.c || (orden.destinoPrev ? { destino: orden.destinoPrev } : null), { agencias: agenciasLista, sinVenta: orden.tipo && orden.tipo !== "OD", dropship: orden.canal === "Dropshipping", comprobanteFijo: orden.compPrev });
   }
   $("#enviar").onclick = async ()=>{
     const c = form.validar(); if(!c){ toast("Revisa los campos marcados"); return; }
